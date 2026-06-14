@@ -1,0 +1,317 @@
+/* ============================================================
+   SUMA CLINIC - OPERATIONS DASHBOARD WIDGET STYLES
+   ============================================================ */
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ─── 1. METRICS CARDS ROW ─── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.metric-card {
+  padding: 24px;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.metric-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.metric-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+/* Color variations for metrics icons */
+.metric-icon-box.blue { background-color: #e3f2fd; color: #1e88e5; }
+.metric-icon-box.green { background-color: #e8f5e9; color: #2e7d32; }
+.metric-icon-box.orange { background-color: #fff3e0; color: #f57c00; }
+.metric-icon-box.red { background-color: #ffeef2; color: #d90429; }
+
+.metric-number {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.1;
+  font-family: var(--font-header);
+}
+
+.metric-trend {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-trend.green { color: #2e7d32; }
+.text-warn { color: var(--warning); }
+.text-danger { color: var(--danger); }
+
+/* ─── 2. CONTENT AREA PANEL SPLITS ─── */
+.dashboard-content-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-column {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.panel-header h3 {
+  font-size: 1.15rem;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.badge-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.badge-count.red { background-color: #ffeef2; color: var(--danger); }
+.badge-count.blue { background-color: var(--primary-light); color: var(--primary); }
+.badge-count.orange { background-color: #fff3e0; color: var(--warning); }
+
+/* Alerts Feed panel */
+.alerts-feed-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.alerts-feed {
+  list-style: none;
+}
+
+.alert-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  border-left: 4px solid var(--border-color);
+  background-color: var(--bg-app);
+  text-align: left;
+}
+
+.alert-item.low_stock {
+  border-left-color: var(--warning);
+  background-color: #fffaf0;
+}
+
+.alert-item.expiry_warning {
+  border-left-color: var(--danger);
+  background-color: #fff5f5;
+}
+
+.feed-alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.low_stock .feed-alert-icon { color: var(--warning); }
+.expiry_warning .feed-alert-icon { color: var(--danger); }
+
+.alert-msg {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.alert-time {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.feed-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+/* ─── 3. STAFF FORM & PANEL ─── */
+.staff-panel-split {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.staff-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.staff-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.success-box {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+/* Staff Listing */
+.staff-list-container {
+  border-top: 1.5px solid var(--border-color);
+  padding-top: 24px;
+  text-align: left;
+}
+
+.staff-list-container h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 16px;
+}
+
+.staff-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.staff-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-app);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.staff-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staff-item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.staff-item-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.no-staff {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Loading Dashboard spinner container */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+/* Expiring list for Pharmacists */
+.expiring-list-container {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.dashboard-table th, .dashboard-table td {
+  padding: 12px;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.dashboard-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.expiring-row:hover {
+  background-color: var(--bg-app);
+}

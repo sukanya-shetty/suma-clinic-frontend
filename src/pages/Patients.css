@@ -1,0 +1,582 @@
+/* ============================================================
+   SUMA CLINIC - PATIENT MANAGEMENT & HISTORY STYLES
+   ============================================================ */
+
+.patients-panel {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 30px;
+  height: calc(100vh - 150px);
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+/* ─── 1. LEFT DIRECTORY COLUMN ─── */
+.directory-side {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  height: 100%;
+}
+
+.directory-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--border-color);
+  padding-bottom: 20px;
+}
+
+.search-box {
+  display: flex;
+  position: relative;
+  align-items: center;
+}
+
+.search-box input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.search-btn {
+  position: absolute;
+  right: 6px;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-btn:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.reg-btn-trigger {
+  width: 100%;
+  background-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.reg-btn-trigger:hover {
+  background-color: var(--primary-hover);
+}
+
+.directory-body {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.patients-list {
+  list-style: none;
+}
+
+.patient-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+}
+
+.patient-item-row:hover {
+  background-color: var(--bg-app);
+  border-color: var(--border-color);
+}
+
+.patient-item-row.active {
+  background-color: var(--primary-light);
+  border-color: rgba(42, 111, 151, 0.2);
+}
+
+.patient-initial {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.patient-item-row.active .patient-initial {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.patient-summary {
+  text-align: left;
+}
+
+.p-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.p-details {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.dir-empty, .dir-loading {
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--text-muted);
+}
+
+/* ─── 2. RIGHT RECORDS VIEWPORT ─── */
+.viewport-side {
+  height: 100%;
+}
+
+.records-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  height: 100%;
+}
+
+.demographics-card {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.demographics-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.demo-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.demo-details h3 {
+  font-size: 1.3rem;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.demo-details p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.address-label {
+  font-size: 0.8rem !important;
+  color: var(--text-main) !important;
+  margin-top: 6px !important;
+}
+
+.add-visit-btn {
+  background-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(42, 111, 151, 0.15);
+}
+
+.add-visit-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Empty placeholder container */
+.empty-viewport-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+.empty-viewport-card h3 {
+  font-size: 1.25rem;
+  color: var(--text-main);
+  margin-top: 15px;
+  margin-bottom: 6px;
+}
+
+.empty-viewport-card p {
+  max-width: 360px;
+  font-size: 0.9rem;
+}
+
+/* ─── 3. CLINICAL TIMELINE HISTORY ─── */
+.history-container {
+  padding: 30px;
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-loading {
+  padding: 60px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.history-empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 30px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background-color: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 10px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -30px;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-content {
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.visit-meta {
+  margin-bottom: 8px;
+}
+
+.visit-date {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.visit-diagnose h4 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+  margin-bottom: 14px;
+}
+
+.visit-diagnose h4 span {
+  font-weight: 500;
+  color: var(--primary);
+}
+
+/* Vitals Badges */
+.vitals-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.vital-badge {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  overflow: hidden;
+}
+
+.vital-label {
+  background-color: var(--border-color);
+  color: var(--text-main);
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+.vital-val {
+  color: var(--text-main);
+  padding: 4px 10px;
+  font-weight: 700;
+}
+
+.visit-notes {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-main);
+  background-color: var(--primary-light);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+}
+
+/* Prescriptions list table in timeline */
+.prescription-history-list h5 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.prescription-history-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.prescription-history-list th, .prescription-history-list td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.prescription-history-list th {
+  color: var(--text-muted);
+  font-weight: 600;
+  background-color: var(--bg-app);
+}
+
+/* ─── 4. MODALS BASE STYLES ─── */
+.modal-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(43, 45, 66, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-container {
+  width: 100%;
+  max-width: 500px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1.5px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 1.2rem;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.close-btn {
+  color: var(--text-muted);
+}
+.close-btn:hover { color: var(--danger); }
+
+.modal-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+/* ─── 5. RECORD VISIT SPLIT FORM MODAL ─── */
+.visit-modal-size {
+  max-width: 960px !important;
+  height: 90vh;
+  max-height: 700px;
+}
+
+.visit-modal-content-split {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  flex-grow: 1;
+  overflow: hidden;
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+
+.visit-form-left {
+  padding: 24px 30px;
+  border-right: 1.5px solid var(--border-color);
+  overflow-y: auto;
+  text-align: left;
+}
+
+.prescription-builder-right {
+  padding: 24px 30px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.panel-sub-header h4 {
+  font-size: 1rem;
+  color: var(--primary);
+  margin-bottom: 16px;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 6px;
+}
+
+/* Single Item form builder */
+.prescribe-item-add-box {
+  background-color: var(--bg-app);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prescribed-items-list-container {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.prescribed-items-list-container h4 {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.prescribed-items-list {
+  list-style: none;
+}
+
+.prescribed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--primary-light);
+  border: 1px solid rgba(42, 111, 151, 0.1);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.item-med-title {
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.item-med-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.item-remove-btn {
+  color: var(--text-muted);
+}
+.item-remove-btn:hover { color: var(--danger); }
+
+.no-items {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 20px 0;
+}
+
+/* Toast notify float */
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.toast-notification.success { background-color: #2a9d8f; }
+.toast-notification.danger { background-color: #d90429; }

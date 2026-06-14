@@ -1,0 +1,110 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background-color: var(--white);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.logoArea {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoText {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.3px;
+}
+
+.navSection {
+  flex-grow: 1;
+  padding: 24px 12px;
+}
+
+.navList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.navLink:hover {
+  background-color: var(--primary-bg);
+  color: var(--primary);
+}
+
+.navLinkActive {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.navLinkActive:hover {
+  background-color: var(--primary-light);
+  color: var(--white);
+}
+
+.footerSection {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.logoutBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--danger);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.logoutBtn:hover {
+  background-color: #FFEBEE;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  background-color: var(--primary-bg);
+  border-radius: var(--radius);
+}
+
+.userName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}

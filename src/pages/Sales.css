@@ -1,0 +1,554 @@
+/* ============================================================
+   SUMA CLINIC - BILLING & DIRECT SALES STYLES
+   ============================================================ */
+
+.sales-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.billing-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 30px;
+}
+
+@media (max-width: 1024px) {
+  .billing-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── LEFT PANEL: SELECTOR ─── */
+.selector-panel {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 780px;
+}
+
+.search-box-billing {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background-color: #fff;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+}
+
+.search-box-billing input {
+  width: 100%;
+  border: none;
+  padding: 12px 0;
+  outline: none;
+  font-size: 0.9rem;
+  background: transparent;
+}
+
+.search-box-billing .search-icon {
+  color: var(--text-muted);
+  position: absolute;
+  right: 16px;
+}
+
+.medicines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.med-card {
+  padding: 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.med-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+  background-color: #fff;
+}
+
+.med-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--bg-app);
+}
+
+.med-card.disabled:hover {
+  border-color: var(--border-color);
+  transform: none;
+  box-shadow: none;
+}
+
+.med-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.med-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.med-details-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 10px;
+}
+
+.med-price {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.med-qty {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.med-qty.green { color: #2e7d32; }
+.med-qty.warn { color: #f57c00; }
+.med-qty.red { color: #d90429; }
+
+.add-to-cart-btn {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.med-card:hover .add-to-cart-btn {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.add-to-cart-btn:disabled {
+  background-color: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.no-meds-msg {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 0;
+}
+
+/* ─── RIGHT PANEL: CART ─── */
+.cart-panel {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cart-header-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.customer-details-section h4,
+.cart-items-section h4 {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  border-bottom: 1.5px solid var(--border-color);
+  padding-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  padding-left: 36px;
+}
+
+/* Cart Items Scroll Container */
+.cart-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.empty-cart-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 30px 10px;
+  border: 1.5px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-cart-state svg {
+  opacity: 0.4;
+}
+
+.cart-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--bg-app);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.item-name-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  max-width: 45%;
+}
+
+.item-name-info .med-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.item-qty-price {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.item-qty-input {
+  width: 50px;
+  padding: 4px 6px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-size: 0.88rem;
+  text-align: center;
+  background-color: #fff;
+}
+
+.item-qty-input:focus {
+  border-color: var(--primary);
+}
+
+.unit-price {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.item-subtotal {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Discount and Dropdown */
+.discount-dropdown {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-size: 0.95rem;
+  background-color: #fff;
+}
+
+.discount-dropdown:focus {
+  border-color: var(--primary);
+}
+
+/* Checkout Summary Details */
+.checkout-summary-section {
+  background-color: var(--bg-app);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.summary-row.grand-total-row {
+  border-top: 1.5px solid var(--border-color);
+  padding-top: 10px;
+  margin-top: 4px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.checkout-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: #2a9d8f;
+  color: #fff;
+  border: none;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.checkout-submit-btn:hover:not(:disabled) {
+  background-color: #228074;
+}
+
+.checkout-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── PRINTABLE INVOICE / RECEIPT ─── */
+.invoice-receipt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.invoice-receipt {
+  width: 100%;
+  max-width: 600px;
+  padding: 40px;
+  background-color: #fff;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+
+.receipt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.clinic-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clinic-brand h2 {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin: 0;
+}
+
+.receipt-logo {
+  color: var(--primary);
+}
+
+.invoice-details-meta {
+  text-align: right;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.invoice-details-meta p {
+  margin: 2px 0;
+}
+
+.receipt-customer-details {
+  background-color: var(--bg-app);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.receipt-customer-details h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--text-main);
+}
+
+.receipt-customer-details p {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+.receipt-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.receipt-table th,
+.receipt-table td {
+  padding: 12px 10px;
+  border-bottom: 1.5px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.receipt-table th {
+  font-weight: 700;
+  color: var(--text-main);
+  background-color: var(--bg-app);
+}
+
+.receipt-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  width: 250px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.totals-row.grand-total {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-main);
+  margin-top: 4px;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.receipt-footer p {
+  margin: 4px 0;
+}
+
+.receipt-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.print-btn {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.new-sale-btn {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  border: 1.5px solid var(--border-color);
+}
+
+/* ─── 5. PRINT MEDIA QUERY INSTRUCTIONS ─── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-area, #printable-area * {
+    visibility: visible;
+  }
+  
+  #printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    background-color: #fff;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

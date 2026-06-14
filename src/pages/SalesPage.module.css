@@ -1,0 +1,34 @@
+.salesCard {
+  background-color: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.headerSection {
+  margin-bottom: 24px;
+}
+
+.filtersRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: var(--primary-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 768px) {
+  .filtersRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.filterBtn {
+  height: 38px;
+  width: 100%;
+}

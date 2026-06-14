@@ -1,0 +1,229 @@
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pageHeader {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+
+.pageTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.pageSubtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cartForm {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cartTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dark);
+}
+
+.cartRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cartRow {
+  display: grid;
+  grid-template-columns: 1fr 140px 120px 40px;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.rowLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.selectGroup {
+  /* spans full */
+}
+
+.qtyGroup {}
+
+.lineTotalGroup {}
+
+.lineTotalValue {
+  padding: 8px 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 700;
+  color: var(--success);
+  font-size: 0.9rem;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 38px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  color: var(--danger);
+  cursor: pointer;
+  background: #FFF5F5;
+}
+
+.removeBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cartSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.summaryInfo {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.grandTotal {
+  font-size: 1rem;
+  color: var(--text-dark);
+}
+
+.grandTotal strong {
+  font-size: 1.2rem;
+  color: var(--success);
+}
+
+.submitRow {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Receipt View ─── */
+.receiptContainer {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.receiptCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  box-shadow: var(--shadow);
+  max-width: 560px;
+  width: 100%;
+}
+
+.receiptHeader {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.receiptTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-top: 12px;
+}
+
+.receiptSubtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.receiptClinic {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px dashed var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.receiptClinic strong {
+  font-size: 1rem;
+  color: var(--text-dark);
+}
+
+.receiptTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.receiptTable th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.receiptTable td {
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.receiptTable tfoot td {
+  padding: 14px 8px;
+  border-bottom: none;
+  border-top: 2px solid var(--border);
+}

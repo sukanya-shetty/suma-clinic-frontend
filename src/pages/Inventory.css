@@ -1,0 +1,350 @@
+/* ============================================================
+   SUMA CLINIC - INVENTORY MANAGEMENT STYLES
+   ============================================================ */
+
+.inventory-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ─── 1. STATS SECTION ─── */
+.inventory-header-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.inventory-header-stats .stat-box {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inventory-header-stats .stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.inventory-header-stats .stat-box.active {
+  border: 1.5px solid var(--primary);
+  background-color: var(--primary-light);
+}
+
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-box.blue { background-color: #e3f2fd; color: #1e88e5; }
+.stat-icon-box.orange { background-color: #fff3e0; color: #f57c00; }
+.stat-icon-box.red { background-color: #ffeef2; color: #d90429; }
+
+.stat-text {
+  text-align: left;
+}
+
+.stat-val {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.1;
+  font-family: var(--font-header);
+}
+
+.stat-lbl {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── 2. CONTENT AREA ─── */
+.inventory-content-box {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.toolbar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #fff;
+  overflow: hidden;
+  max-width: 400px;
+  width: 100%;
+}
+
+.search-box input {
+  border: none;
+  padding: 10px 16px;
+  outline: none;
+  flex-grow: 1;
+  font-size: 0.9rem;
+}
+
+.search-btn {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-btn:hover {
+  color: var(--primary);
+}
+
+.reg-btn-trigger.add-med-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reg-btn-trigger.add-med-trigger:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Table Design */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.inventory-table th, 
+.inventory-table td {
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.inventory-table th {
+  background-color: var(--bg-app);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.inventory-table tbody tr:hover {
+  background-color: var(--bg-app);
+}
+
+.inventory-table tbody tr.row-expired {
+  background-color: #ffeef2;
+}
+
+.text-warn {
+  color: #f57c00;
+}
+
+.text-danger {
+  color: #d90429;
+}
+
+.status-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.status-pill.red { background-color: #ffeef2; color: #d90429; }
+.status-pill.orange { background-color: #fff3e0; color: #f57c00; }
+.status-pill.green { background-color: #e8f5e9; color: #2e7d32; }
+
+.item-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.item-remove-btn:hover {
+  background-color: #ffeef2;
+  color: #d90429;
+}
+
+/* ─── 3. MODAL AND FORM ─── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(8, 6, 13, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  width: 500px;
+  max-width: 90%;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: var(--radius-md);
+  position: relative;
+  text-align: left;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.modal-header h3 {
+  font-size: 1.2rem;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.input-group input {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-size: 0.95rem;
+  background-color: #fff;
+}
+
+.input-group input:focus {
+  border-color: var(--primary);
+}
+
+.hint-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.error-box {
+  background-color: #ffeef2;
+  color: #d90429;
+  border: 1px solid rgba(217, 4, 41, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+}
+
+.success-box {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+}
+
+/* ─── 4. TOAST NOTIFICATIONS ─── */
+.toast-notification {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1100;
+  font-weight: 600;
+}
+
+.toast-notification.success {
+  background-color: #2e7d32;
+}
+
+.toast-notification.danger {
+  background-color: #d90429;
+}

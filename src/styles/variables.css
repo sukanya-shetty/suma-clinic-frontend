@@ -1,0 +1,21 @@
+:root {
+  --primary: #1565C0;
+  --primary-light: #1E88E5;
+  --primary-bg: #F0F4FF;
+  --white: #FFFFFF;
+  --border: #DDEEFF;
+  --text-dark: #1A1A2E;
+  --text-muted: #6B7A99;
+  --danger: #D32F2F;
+  --warning: #F57C00;
+  --success: #2E7D32;
+
+  --sidebar-width: 220px;
+  --topbar-height: 60px;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --shadow: 0 1px 3px rgba(21, 101, 192, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(21, 101, 192, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --radius: 6px;
+  --radius-lg: 8px;
+}
