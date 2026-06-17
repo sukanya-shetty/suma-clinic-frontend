@@ -291,8 +291,14 @@ const PatientsPage = () => {
               className="form-control"
               placeholder="e.g. 9876543210"
               value={patientForm.phone_number}
-              onChange={(e) => setPatientForm({ ...patientForm, phone_number: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val.length <= 10) {
+                  setPatientForm({ ...patientForm, phone_number: val });
+                }
+              }}
               disabled={formLoading}
+              maxLength={10}
             />
           </div>
 

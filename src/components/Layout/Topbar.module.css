@@ -33,3 +33,30 @@
   font-size: 0.75rem;
   font-weight: 700;
 }
+
+.rightArea {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.addStaffBtn {
+  background-color: var(--success);
+  color: var(--white);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.addStaffBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.addStaffBtn:active {
+  transform: translateY(0);
+}

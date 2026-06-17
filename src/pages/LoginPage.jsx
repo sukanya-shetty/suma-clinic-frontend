@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, Eye, EyeOff } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import styles from './LoginPage.module.css';
 
@@ -9,6 +9,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, token } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -67,16 +68,27 @@ const LoginPage = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password"
-              className="form-control"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
+            <div className={styles.passwordWrapper}>
+              <input 
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                className="form-control"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+                style={{ paddingRight: '42px' }}
+              />
+              <button
+                type="button"
+                className={styles.eyeBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className={styles.submitBtn} disabled={loading}>
@@ -90,7 +102,7 @@ const LoginPage = () => {
 
         <div className={styles.roleTip}>
           <p>Demo Credentials:</p>
-          <p style={{ fontWeight: 600, marginTop: 4 }}>dr.sharma@clinic.com / password123</p>
+          <p style={{ fontWeight: 600, marginTop: 4 }}>dr.shetty@clinic.com / password123</p>
         </div>
       </div>
     </div>

@@ -87,17 +87,17 @@ const InventoryPage = () => {
     setFormError('');
     setFormSuccess('');
 
-    const { name, price, quantity, expiryDate, batch_number, supplier_name, purchase_price } = medForm;
+    const { name, quantity, expiryDate, batch_number, supplier_name } = medForm;
 
-    if (!name || !price || !quantity || !expiryDate) {
-      setFormError('Name, Quantity, Price, and Expiry Date are required.');
+    if (!name || !quantity || !expiryDate) {
+      setFormError('Name, Quantity, and Expiry Date are required.');
       return;
     }
 
-    const pr = parseFloat(price);
+    const pr = 1.0; // default selling price to satisfy backend positive price requirement
     const qty = parseInt(quantity);
-    if (isNaN(pr) || pr <= 0 || isNaN(qty) || qty <= 0) {
-      setFormError('Price and quantity must be positive numbers.');
+    if (isNaN(qty) || qty <= 0) {
+      setFormError('Quantity must be a positive number.');
       return;
     }
 
@@ -110,7 +110,7 @@ const InventoryPage = () => {
         expiryDate,
         batch_number: batch_number.trim() || null,
         supplier_name: supplier_name.trim() || null,
-        purchase_price: purchase_price ? parseFloat(purchase_price) : null
+        purchase_price: null
       };
 
       const res = await inventoryService.addMedicine(payload);
@@ -153,7 +153,6 @@ const InventoryPage = () => {
   const medHeaders = [
     { key: 'medicine_name', label: 'Medicine Name' },
     { key: 'quantity', label: 'Qty' },
-    { key: 'price', label: 'Price' },
     { key: 'expiry_date', label: 'Expiry Date' },
     { key: 'batch_number', label: 'Batch' },
     { key: 'supplier_name', label: 'Supplier' }
@@ -170,7 +169,6 @@ const InventoryPage = () => {
             {med.quantity}
           </strong> units
         </td>
-        <td>${parseFloat(med.price).toFixed(2)}</td>
         <td>{med.expiry_date ? new Date(med.expiry_date).toLocaleDateString() : '-'}</td>
         <td>{med.batch_number || '-'}</td>
         <td>{med.supplier_name || '-'}</td>
@@ -243,35 +241,18 @@ const InventoryPage = () => {
             />
           </div>
 
-          <div className={styles.formGrid}>
-            <div className="form-group">
-              <label htmlFor="price">Selling Price ($) *</label>
-              <input 
-                type="number" 
-                id="price"
-                step="0.01"
-                className="form-control"
-                placeholder="e.g. 5.50"
-                value={medForm.price}
-                onChange={(e) => setMedForm({ ...medForm, price: e.target.value })}
-                disabled={formLoading}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantity">Quantity Added *</label>
-              <input 
-                type="number" 
-                id="quantity"
-                className="form-control"
-                placeholder="e.g. 100"
-                value={medForm.quantity}
-                onChange={(e) => setMedForm({ ...medForm, quantity: e.target.value })}
-                disabled={formLoading}
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="quantity">Quantity Added *</label>
+            <input 
+              type="number" 
+              id="quantity"
+              className="form-control"
+              placeholder="e.g. 100"
+              value={medForm.quantity}
+              onChange={(e) => setMedForm({ ...medForm, quantity: e.target.value })}
+              disabled={formLoading}
+              required
+            />
           </div>
 
           <div className={styles.formGrid}>
@@ -302,33 +283,17 @@ const InventoryPage = () => {
             </div>
           </div>
 
-          <div className={styles.formGrid}>
-            <div className="form-group">
-              <label htmlFor="supplier_name">Supplier Name</label>
-              <input 
-                type="text" 
-                id="supplier_name"
-                className="form-control"
-                placeholder="e.g. MediSupply Ltd."
-                value={medForm.supplier_name}
-                onChange={(e) => setMedForm({ ...medForm, supplier_name: e.target.value })}
-                disabled={formLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="purchase_price">Purchase Cost ($)</label>
-              <input 
-                type="number" 
-                id="purchase_price"
-                step="0.01"
-                className="form-control"
-                placeholder="e.g. 2.10"
-                value={medForm.purchase_price}
-                onChange={(e) => setMedForm({ ...medForm, purchase_price: e.target.value })}
-                disabled={formLoading}
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="supplier_name">Supplier Name</label>
+            <input 
+              type="text" 
+              id="supplier_name"
+              className="form-control"
+              placeholder="e.g. MediSupply Ltd."
+              value={medForm.supplier_name}
+              onChange={(e) => setMedForm({ ...medForm, supplier_name: e.target.value })}
+              disabled={formLoading}
+            />
           </div>
 
           <div className={styles.modalFooter}>

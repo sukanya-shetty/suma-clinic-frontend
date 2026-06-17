@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart2, TrendingUp, Users, Pill, DollarSign, RefreshCw } from 'lucide-react';
+import { BarChart2, TrendingUp, Users, Pill, RefreshCw } from 'lucide-react';
 import { salesService } from '../services/salesService';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
@@ -52,7 +52,6 @@ const ReportsPage = () => {
   };
 
   // ─── Computed Metrics ───
-  const totalRevenue = sales.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0);
   const consultationSales = sales.filter(s => s.sale_type === 'Consultation');
   const walkInSales = sales.filter(s => s.sale_type !== 'Consultation');
   const lowStockMeds = medicines.filter(m => m.quantity < 10);
@@ -63,29 +62,26 @@ const ReportsPage = () => {
     return (expiry - today) / (1000 * 60 * 60 * 24) <= 30;
   });
 
-  // ─── Medicine-wise sales breakdown ───
+  // ─── Medicine-wise dispensing breakdown ───
   const medicineSalesMap = {};
   sales.forEach(s => {
     const key = s.medicine_name || 'Unknown';
     if (!medicineSalesMap[key]) {
-      medicineSalesMap[key] = { medicine: key, units: 0, revenue: 0 };
+      medicineSalesMap[key] = { medicine: key, units: 0 };
     }
     medicineSalesMap[key].units += parseInt(s.quantity_sold || 0);
-    medicineSalesMap[key].revenue += parseFloat(s.total_amount || 0);
   });
-  const medicineSalesRows = Object.values(medicineSalesMap).sort((a, b) => b.revenue - a.revenue);
+  const medicineSalesRows = Object.values(medicineSalesMap).sort((a, b) => b.units - a.units);
 
   const medSalesHeaders = [
     { key: 'medicine', label: 'Medicine Name' },
-    { key: 'units', label: 'Total Units Sold' },
-    { key: 'revenue', label: 'Revenue Generated' }
+    { key: 'units', label: 'Units Dispensed' }
   ];
 
   const renderMedSaleRow = (row, idx) => (
     <tr key={idx}>
       <td style={{ fontWeight: 600 }}>{row.medicine.toUpperCase()}</td>
-      <td>{row.units} units</td>
-      <td><strong style={{ color: 'var(--success)' }}>${row.revenue.toFixed(2)}</strong></td>
+      <td><strong>{row.units} units</strong></td>
     </tr>
   );
 
@@ -139,13 +135,7 @@ const ReportsPage = () => {
         <>
           <section className={styles.statsGrid}>
             <StatCard
-              title="Total Revenue"
-              value={`₹${totalRevenue.toFixed(2)}`}
-              icon={<DollarSign size={20} />}
-              color="var(--success)"
-            />
-            <StatCard
-              title="Sales Transactions"
+              title="Dispensed Transactions"
               value={sales.length}
               icon={<TrendingUp size={20} />}
               color="var(--primary)"
@@ -164,21 +154,21 @@ const ReportsPage = () => {
             />
           </section>
 
-          {/* ─── SALES BREAKDOWN CARDS ─── */}
+          {/* ─── DISPENSING & INVENTORY BREAKDOWN ─── */}
           <section className={styles.breakdownGrid}>
             <div className={styles.breakdownCard}>
-              <h4 className={styles.cardTitle}>Sales Breakdown</h4>
+              <h4 className={styles.cardTitle}>Dispensing Breakdown</h4>
               <div className={styles.breakdownRows}>
                 <div className={styles.breakdownItem}>
                   <span className={styles.breakdownLabel}>Consultation (Prescription)</span>
                   <span className={styles.breakdownValue}>
-                    {consultationSales.length} sales — ₹{consultationSales.reduce((s, r) => s + parseFloat(r.total_amount || 0), 0).toFixed(2)}
+                    {consultationSales.length} times
                   </span>
                 </div>
                 <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Walk-In / Direct</span>
+                  <span className={styles.breakdownLabel}>Direct Dispensing</span>
                   <span className={styles.breakdownValue}>
-                    {walkInSales.length} sales — ₹{walkInSales.reduce((s, r) => s + parseFloat(r.total_amount || 0), 0).toFixed(2)}
+                    {walkInSales.length} times
                   </span>
                 </div>
               </div>
@@ -209,17 +199,17 @@ const ReportsPage = () => {
 
           {/* ─── MEDICINE SALES TABLE ─── */}
           <section className={styles.tableSection}>
-            <h4 className={styles.tableSectionTitle}>Medicine-wise Revenue Breakdown</h4>
+            <h4 className={styles.tableSectionTitle}>Medicine Dispensing Summary Report</h4>
             {medicineSalesRows.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No sales data found for selected date range.
+                No dispensing logs found for selected date range.
               </div>
             ) : (
               <Table
                 headers={medSalesHeaders}
                 data={medicineSalesRows}
                 renderRow={renderMedSaleRow}
-                emptyMessage="No medicine sales data for this period."
+                emptyMessage="No medicine dispensing data for this period."
               />
             )}
           </section>

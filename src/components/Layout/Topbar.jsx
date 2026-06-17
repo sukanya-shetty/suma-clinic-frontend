@@ -7,15 +7,27 @@ const Topbar = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
 
+  console.log('Topbar state - path:', location.pathname, 'role:', user?.role);
+
   const getPageTitle = (pathname) => {
-    if (pathname === '/dashboard') return 'Dashboard';
-    if (pathname === '/patients') return 'Patient Management';
-    if (pathname.startsWith('/patients/')) return 'Patient Details';
-    if (pathname === '/visits/new') return 'New Consultation Visit';
-    if (pathname === '/inventory') return 'Medicine Inventory';
-    if (pathname === '/sales') return 'Billing & Sales Records';
+    const cleanPath = pathname.toLowerCase().replace(/\/$/, '');
+    if (cleanPath === '/dashboard') return 'Dashboard';
+    if (cleanPath === '/patients') return 'Patient Management';
+    if (cleanPath.startsWith('/patients/')) return 'Patient Details';
+    if (cleanPath === '/visits/new') return 'New Consultation Visit';
+    if (cleanPath === '/inventory') return 'Medicine Inventory';
+    if (cleanPath === '/sales') return 'Billing & Sales Records';
     return 'Suma Clinic';
   };
+
+  const handleScrollToStaff = () => {
+    const element = document.getElementById('staff-management-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const isDashboard = location.pathname.toLowerCase().replace(/\/$/, '') === '/dashboard';
 
   return (
     <header className={styles.topbar}>
@@ -25,6 +37,11 @@ const Topbar = () => {
         <div className={styles.userInfo}>
           <span className={styles.userName}>{user.name}</span>
           <span className={styles.userRole}>{user.role}</span>
+          {user.role === 'Doctor' && isDashboard && (
+            <button onClick={handleScrollToStaff} className={styles.addStaffBtn}>
+              + Register Staff
+            </button>
+          )}
         </div>
       )}
     </header>

@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, Search, UserCheck } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Search, UserCheck, Check } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
 import { visitService } from '../services/visitService';
+import SearchBar from '../components/common/SearchBar';
 import styles from './NewVisitPage.module.css';
+
+const DOSAGE_OPTIONS = [
+  '1-0-0', '0-1-0', '0-0-1', '1-1-0', '1-0-1', '0-1-1', '1-1-1',
+  '½-0-0', '0-0-½', '½-0-½', '½-½-½', '½-1-½', '1-0-½',
+  'SOS', 'SOS (Max 3/day)', 'Stat (Single dose)', 'BD (Twice daily)', 'TDS (Thrice daily)', 'QID (Four times daily)', 'OD (Once daily)', 'HS (Bedtime)', 'AC (Before meals)', 'PC (After meals)',
+  'Alternate days (1-0-0)', 'Alternate days (1-0-1)', 'Alternate days (1-1-1)', 'Every 2 days', 'Every 3 days', 'Every 4 days', 'Every 5 days', 'Once weekly', 'Twice weekly', 'Once in 15 days', 'Once monthly',
+  'Taper: 1-1-1 → 1-0-1 → 1-0-0', 'Taper: 2-0-2 → 1-0-1 → 1-0-0'
+];
 
 const NewVisitPage = () => {
   const location = useLocation();
@@ -96,7 +105,7 @@ const NewVisitPage = () => {
   const addPrescriptionRow = () => {
     setPrescriptionRows([
       ...prescriptionRows,
-      { medicine_id: '', dosage: '', duration_days: '', instructions: '', quantity: '' }
+      { medicine_id: '', dosage: '', duration_days: '', instructions: '', quantity: '', isCustom: false }
     ]);
   };
 
@@ -122,44 +131,32 @@ const NewVisitPage = () => {
 
     const { diagnosis, blood_pressure, temperature, sugar, notes } = visitForm;
 
-    if (!diagnosis || !blood_pressure || !temperature || !sugar) {
-      setError('All vital signs fields (BP, Sugar, Temperature, Diagnosis) are required.');
-      return;
-    }
-
-    // BP format check (SYS/DIA)
-    if (!/^\d+\/\d+$/.test(blood_pressure)) {
+    // Only validate format if a value is entered (all fields are optional)
+    if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
       setError('Blood pressure must follow SYS/DIA format (e.g. 120/80).');
       return;
     }
 
-    // Temperature numeric check
-    const parsedTemp = parseFloat(temperature);
-    if (isNaN(parsedTemp) || parsedTemp < 90 || parsedTemp > 110) {
-      setError('Temperature must be a valid number between 90 and 110 °F.');
-      return;
+    let parsedTemp = null;
+    if (temperature) {
+      parsedTemp = parseFloat(temperature);
+      if (isNaN(parsedTemp) || parsedTemp < 90 || parsedTemp > 110) {
+        setError('Temperature must be a valid number between 90 and 110 °F.');
+        return;
+      }
     }
 
-    // Prescription validation checks
+    // Prescription validation — only validate rows that have a medicine selected
     for (let i = 0; i < prescriptionRows.length; i++) {
       const row = prescriptionRows[i];
-      if (!row.medicine_id) {
-        setError(`Please select a medicine for prescription row #${i + 1}.`);
-        return;
-      }
-      if (!row.dosage || !row.duration_days || !row.quantity) {
-        setError(`Please fill in all details (Dosage, Duration, Quantity) for prescription row #${i + 1}.`);
-        return;
-      }
+      if (!row.medicine_id) continue; // skip empty rows
 
       const qty = parseInt(row.quantity);
-      const days = parseInt(row.duration_days);
-      if (isNaN(qty) || qty <= 0 || isNaN(days) || days <= 0) {
-        setError(`Quantity and duration must be positive integers for row #${i + 1}.`);
+      if (row.quantity && (isNaN(qty) || qty <= 0)) {
+        setError(`Row #${i + 1}: Quantity must be a positive number.`);
         return;
       }
 
-      // Check stock limit
       const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(row.medicine_id));
       if (selectedMed && qty > selectedMed.quantity) {
         setError(`Row #${i + 1}: Insufficient stock. Only ${selectedMed.quantity} units of ${selectedMed.medicine_name.toUpperCase()} available.`);
@@ -171,14 +168,14 @@ const NewVisitPage = () => {
 
     try {
       // Create packed notes format
-      const combinedNotes = `Blood Sugar: ${sugar} | Notes: ${notes ? notes.trim() : 'None'}`;
+      const combinedNotes = `Blood Sugar: ${sugar || '-'} | Notes: ${notes ? notes.trim() : 'None'}`;
       
       const visitData = {
         patient_id: selectedPatient.patient_id,
-        visit_date: new Date().toISOString().slice(0, 19).replace('T', ' '), // MySQL DATETIME format YYYY-MM-DD HH:MM:SS
-        diagnosis: diagnosis.trim(),
-        blood_pressure,
-        temperature: parsedTemp,
+        visit_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        diagnosis: diagnosis ? diagnosis.trim() : 'General Visit',
+        blood_pressure: blood_pressure || 'N/A',
+        temperature: parsedTemp || 98.6,
         notes: combinedNotes
       };
 
@@ -190,14 +187,15 @@ const NewVisitPage = () => {
         throw new Error('Backend failed to return a valid visit ID.');
       }
 
-      // 2. Submit all prescriptions sequentially (triggering automatic stock deductions)
+      // 2. Submit only rows that have a medicine selected
       for (const row of prescriptionRows) {
+        if (!row.medicine_id) continue;
         await visitService.createPrescription({
           visit_id: visitId,
           medicine_id: parseInt(row.medicine_id),
-          dosage: row.dosage.trim(),
-          quantity: parseInt(row.quantity),
-          duration_days: parseInt(row.duration_days)
+          dosage: (row.dosage && row.dosage.trim()) ? row.dosage.trim() : 'As directed',
+          quantity: parseInt(row.quantity) || 1,
+          duration_days: parseInt(row.duration_days) || null
         });
       }
 
@@ -281,7 +279,7 @@ const NewVisitPage = () => {
           
           <div className={styles.formGrid}>
             <div className="form-group">
-              <label htmlFor="blood_pressure">Blood Pressure (SYS/DIA) *</label>
+              <label htmlFor="blood_pressure">Blood Pressure (SYS/DIA)</label>
               <input 
                 type="text" 
                 id="blood_pressure"
@@ -290,12 +288,11 @@ const NewVisitPage = () => {
                 value={visitForm.blood_pressure}
                 onChange={(e) => setVisitForm({ ...visitForm, blood_pressure: e.target.value })}
                 disabled={loading}
-                required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="sugar">Blood Sugar Level *</label>
+              <label htmlFor="sugar">Blood Sugar Level</label>
               <input 
                 type="text" 
                 id="sugar"
@@ -304,12 +301,11 @@ const NewVisitPage = () => {
                 value={visitForm.sugar}
                 onChange={(e) => setVisitForm({ ...visitForm, sugar: e.target.value })}
                 disabled={loading}
-                required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="temperature">Body Temperature (°F) *</label>
+              <label htmlFor="temperature">Body Temperature (°F)</label>
               <input 
                 type="number" 
                 id="temperature"
@@ -319,22 +315,20 @@ const NewVisitPage = () => {
                 value={visitForm.temperature}
                 onChange={(e) => setVisitForm({ ...visitForm, temperature: e.target.value })}
                 disabled={loading}
-                required
               />
             </div>
           </div>
 
           <div className="form-group" style={{ marginTop: 12 }}>
-            <label htmlFor="diagnosis">Diagnosis *</label>
+            <label htmlFor="diagnosis">Diagnosis</label>
             <input 
               type="text" 
               id="diagnosis"
               className="form-control"
-              placeholder="e.g. Hypertension / Common Cold"
+              placeholder="e.g. Hypertension / Common Cold / Follow-up"
               value={visitForm.diagnosis}
               onChange={(e) => setVisitForm({ ...visitForm, diagnosis: e.target.value })}
               disabled={loading}
-              required
             />
           </div>
 
@@ -397,16 +391,90 @@ const NewVisitPage = () => {
                     </div>
 
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ fontSize: '0.75rem' }}>Dosage *</label>
-                      <input 
-                        type="text" 
+                      <label style={{ fontSize: '0.75rem' }}>Dosage</label>
+                      <select
                         className="form-control"
-                        placeholder="e.g. 1-0-1"
-                        value={row.dosage}
-                        onChange={(e) => updateRowField(idx, 'dosage', e.target.value)}
+                        value={row.isCustom ? '__custom__' : row.dosage}
+                        onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            updateRowField(idx, 'isCustom', true);
+                            updateRowField(idx, 'dosage', '');
+                          } else {
+                            updateRowField(idx, 'isCustom', false);
+                            updateRowField(idx, 'dosage', e.target.value);
+                          }
+                        }}
                         disabled={loading}
-                        required
-                      />
+                      >
+                        <option value="">-- Select Dosage --</option>
+
+                        <optgroup label="━━ Daily (Morning-Afternoon-Night)">
+                          <option value="1-0-0">1-0-0 &nbsp;&nbsp;Morning only</option>
+                          <option value="0-1-0">0-1-0 &nbsp;&nbsp;Afternoon only</option>
+                          <option value="0-0-1">0-0-1 &nbsp;&nbsp;Night only</option>
+                          <option value="1-1-0">1-1-0 &nbsp;&nbsp;Morning + Afternoon</option>
+                          <option value="1-0-1">1-0-1 &nbsp;&nbsp;Morning + Night</option>
+                          <option value="0-1-1">0-1-1 &nbsp;&nbsp;Afternoon + Night</option>
+                          <option value="1-1-1">1-1-1 &nbsp;&nbsp;Three times daily</option>
+                        </optgroup>
+
+                        <optgroup label="━━ Half Tablet">
+                          <option value="½-0-0">½-0-0 &nbsp;&nbsp;Half tab morning</option>
+                          <option value="0-0-½">0-0-½ &nbsp;&nbsp;Half tab night</option>
+                          <option value="½-0-½">½-0-½ &nbsp;&nbsp;Half tab M + N</option>
+                          <option value="½-½-½">½-½-½ &nbsp;&nbsp;Half tab TDS</option>
+                          <option value="½-1-½">½-1-½ &nbsp;&nbsp;Half M + Full A + Half N</option>
+                          <option value="1-0-½">1-0-½ &nbsp;&nbsp;Full morning, Half night</option>
+                        </optgroup>
+
+                        <optgroup label="━━ SOS / As Needed">
+                          <option value="SOS">SOS &nbsp;&nbsp;If needed only</option>
+                          <option value="SOS (Max 3/day)">SOS (Max 3/day)</option>
+                          <option value="Stat (Single dose)">Stat — Single dose now</option>
+                          <option value="BD (Twice daily)">BD — Twice daily</option>
+                          <option value="TDS (Thrice daily)">TDS — Thrice daily</option>
+                          <option value="QID (Four times daily)">QID — Four times daily</option>
+                          <option value="OD (Once daily)">OD — Once daily</option>
+                          <option value="HS (Bedtime)">HS — Bedtime only</option>
+                          <option value="AC (Before meals)">AC — Before meals</option>
+                          <option value="PC (After meals)">PC — After meals</option>
+                        </optgroup>
+
+                        <optgroup label="━━ Alternate / Interval">
+                          <option value="Alternate days (1-0-0)">Alternate days — Morning</option>
+                          <option value="Alternate days (1-0-1)">Alternate days — M + N</option>
+                          <option value="Alternate days (1-1-1)">Alternate days — TDS</option>
+                          <option value="Every 2 days">Every 2 days</option>
+                          <option value="Every 3 days">Every 3 days</option>
+                          <option value="Every 4 days">Every 4 days</option>
+                          <option value="Every 5 days">Every 5 days</option>
+                          <option value="Once weekly">Once weekly</option>
+                          <option value="Twice weekly">Twice weekly</option>
+                          <option value="Once in 15 days">Once in 15 days</option>
+                          <option value="Once monthly">Once monthly</option>
+                        </optgroup>
+
+                        <optgroup label="━━ Tapering">
+                          <option value="Taper: 1-1-1 → 1-0-1 → 1-0-0">Taper: TDS → BD → OD</option>
+                          <option value="Taper: 2-0-2 → 1-0-1 → 1-0-0">Taper: High → Maintenance</option>
+                        </optgroup>
+
+                        <option value="__custom__">✏️ Custom (type manually)</option>
+                      </select>
+
+                      {/* Custom dosage text input */}
+                      {row.isCustom && (
+                        <input
+                          type="text"
+                          className="form-control"
+                          style={{ marginTop: 6 }}
+                          placeholder="Type custom dosage..."
+                          value={row.dosage}
+                          onChange={(e) => updateRowField(idx, 'dosage', e.target.value)}
+                          disabled={loading}
+                          autoFocus
+                        />
+                      )}
                     </div>
 
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -466,11 +534,22 @@ const NewVisitPage = () => {
           <button 
             type="submit" 
             className="btn btn-primary" 
-            style={{ width: '200px', height: '44px' }}
-            disabled={loading}
+            style={{ 
+              width: '200px', 
+              height: '44px',
+              backgroundColor: success ? 'var(--success, #16a34a)' : undefined,
+              borderColor: success ? 'var(--success, #16a34a)' : undefined,
+              transition: 'background-color 0.3s, border-color 0.3s'
+            }}
+            disabled={loading || !!success}
           >
-            <Save size={16} />
-            <span>{loading ? 'Saving Consultation...' : 'Save Record'}</span>
+            {success ? (
+              <><Check size={16} /><span>Saved</span></>
+            ) : loading ? (
+              <><span className="spinner" style={{ borderTopColor: '#fff', width: 14, height: 14 }}></span><span>Saving...</span></>
+            ) : (
+              <><Save size={16} /><span>Save Record</span></>
+            )}
           </button>
         </div>
       </form>

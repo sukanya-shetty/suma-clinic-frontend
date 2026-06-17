@@ -46,13 +46,7 @@ const WalkInSalePage = () => {
     return medicines.find(m => m.medicine_id === parseInt(medicine_id));
   };
 
-  const calculateCartTotal = () => {
-    return cart.reduce((sum, row) => {
-      const med = getMedInfo(row.medicine_id);
-      if (!med) return sum;
-      return sum + (parseFloat(med.price) * parseInt(row.quantity_sold || 0));
-    }, 0);
-  };
+
 
   const handleSubmitSales = async (e) => {
     e.preventDefault();
@@ -112,19 +106,18 @@ const WalkInSalePage = () => {
 
   // ─── Receipt View ───
   if (receipt) {
-    const receiptTotal = receipt.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0);
     return (
       <div className={styles.receiptContainer}>
         <div className={styles.receiptCard}>
           <div className={styles.receiptHeader}>
             <CheckCircle size={40} color="var(--success)" />
-            <h3 className={styles.receiptTitle}>Sale Completed!</h3>
-            <p className={styles.receiptSubtitle}>Walk-in sale processed successfully. Below is your receipt.</p>
+            <h3 className={styles.receiptTitle}>Dispensing Completed!</h3>
+            <p className={styles.receiptSubtitle}>Medicine has been successfully dispensed. Below is a summary.</p>
           </div>
 
           <div className={styles.receiptClinic}>
             <strong>Suma Clinic Pharmacy</strong>
-            <span>Walk-In Sale Receipt</span>
+            <span>Direct Dispensing Log Summary</span>
             <span>{new Date().toLocaleString()}</span>
           </div>
 
@@ -133,32 +126,20 @@ const WalkInSalePage = () => {
               <tr>
                 <th>Medicine</th>
                 <th>Qty</th>
-                <th>Price/Unit</th>
-                <th>Total</th>
               </tr>
             </thead>
             <tbody>
               {receipt.map((item, idx) => (
                 <tr key={idx}>
                   <td>{(item.medicine_name || '').toUpperCase()}</td>
-                  <td>{item.quantity_sold}</td>
-                  <td>₹{parseFloat(item.price || 0).toFixed(2)}</td>
-                  <td><strong>₹{parseFloat(item.total_amount || 0).toFixed(2)}</strong></td>
+                  <td><strong>{item.quantity_sold} units</strong></td>
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 700 }}>Grand Total</td>
-                <td style={{ fontWeight: 700, color: 'var(--success)', fontSize: '1.1rem' }}>
-                  ₹{receiptTotal.toFixed(2)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
 
           <button className="btn btn-primary" style={{ width: '100%', marginTop: 24 }} onClick={newSale}>
-            <ShoppingCart size={16} /> Record Another Sale
+            <Plus size={16} /> Dispense More Medicine
           </button>
         </div>
       </div>
@@ -171,10 +152,10 @@ const WalkInSalePage = () => {
       <div className={styles.pageHeader}>
         <h2 className={styles.pageTitle}>
           <ShoppingCart size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-          Walk-In Pharmacy Sale
+          Direct Medicine Dispensing
         </h2>
         <p className={styles.pageSubtitle}>
-          Record direct medicine purchases for walk-in customers. Stock deducts automatically.
+          Dispense medicines directly to walk-in patients. Stock deducts automatically.
         </p>
       </div>
 
@@ -182,7 +163,7 @@ const WalkInSalePage = () => {
 
       <form onSubmit={handleSubmitSales} className={styles.cartForm}>
         <div className={styles.cartHeader}>
-          <h4 className={styles.cartTitle}>Medicine Cart</h4>
+          <h4 className={styles.cartTitle}>Medicine List</h4>
           <button type="button" className="btn btn-secondary" onClick={addRow} disabled={loading}>
             <Plus size={16} /> Add Medicine Row
           </button>
@@ -196,7 +177,6 @@ const WalkInSalePage = () => {
           <div className={styles.cartRows}>
             {cart.map((row, idx) => {
               const med = getMedInfo(row.medicine_id);
-              const lineTotal = med ? (parseFloat(med.price) * parseInt(row.quantity_sold || 0)).toFixed(2) : '0.00';
               return (
                 <div key={idx} className={styles.cartRow}>
                   <div className={styles.selectGroup}>
@@ -211,7 +191,7 @@ const WalkInSalePage = () => {
                       <option value="">-- Select Medicine --</option>
                       {medicines.map(m => (
                         <option key={m.medicine_id} value={m.medicine_id}>
-                          {m.medicine_name.toUpperCase()} — Stock: {m.quantity} — ₹{parseFloat(m.price).toFixed(2)}
+                          {m.medicine_name.toUpperCase()} (Available: {m.quantity})
                         </option>
                       ))}
                     </select>
@@ -229,11 +209,6 @@ const WalkInSalePage = () => {
                       disabled={loading}
                       required
                     />
-                  </div>
-
-                  <div className={styles.lineTotalGroup}>
-                    <label className={styles.rowLabel}>Line Total</label>
-                    <div className={styles.lineTotalValue}>₹{lineTotal}</div>
                   </div>
 
                   <button
@@ -256,9 +231,6 @@ const WalkInSalePage = () => {
           <div className={styles.summaryInfo}>
             <span>{cart.filter(r => r.medicine_id).length} item(s) selected</span>
           </div>
-          <div className={styles.grandTotal}>
-            Grand Total: <strong>₹{calculateCartTotal().toFixed(2)}</strong>
-          </div>
         </div>
 
         <div className={styles.submitRow}>
@@ -268,8 +240,8 @@ const WalkInSalePage = () => {
             style={{ width: '220px', height: '44px' }}
             disabled={loading || medsLoading}
           >
-            <ReceiptText size={16} />
-            <span>{loading ? 'Processing Sale...' : 'Complete Sale & Print'}</span>
+            <CheckCircle size={16} />
+            <span>{loading ? 'Processing Dispensing...' : 'Complete Dispensing'}</span>
           </button>
         </div>
       </form>

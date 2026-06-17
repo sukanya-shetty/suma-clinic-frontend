@@ -25,8 +25,7 @@ const Sidebar = () => {
     { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: true },
     { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isDoctor },
     { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: true },
-    { path: '/sales', label: 'Sales Ledger', icon: <DollarSign size={18} />, show: true },
-    { path: '/sales/walkin', label: 'Walk-In Sale', icon: <ShoppingCart size={18} />, show: true },
+    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: true },
     { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: true },
   ].filter(item => item.show);
 
