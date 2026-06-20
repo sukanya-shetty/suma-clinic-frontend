@@ -555,3 +555,34 @@
 .eyeBtn:hover {
   color: var(--primary);
 }
+
+.pharmacistTablesRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .pharmacistTablesRow {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.deleteStaffBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.deleteStaffBtn:hover {
+  background-color: #fee2e2;
+  color: var(--danger);
+}

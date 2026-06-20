@@ -19,14 +19,15 @@ const Sidebar = () => {
 
   const isDoctor = user && user.role === 'Doctor';
   const isPharmacist = user && user.role === 'Pharmacist';
+  const isNurse = user && user.role === 'Nurse';
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, show: true },
-    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: true },
+    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isDoctor || isPharmacist || isNurse },
     { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isDoctor },
-    { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: true },
-    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: true },
-    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: true },
+    { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: isDoctor || isPharmacist },
+    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: isDoctor || isPharmacist },
+    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isDoctor || isPharmacist },
   ].filter(item => item.show);
 
   return (

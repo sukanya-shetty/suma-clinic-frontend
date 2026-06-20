@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Users, 
-  Pill, 
-  AlertTriangle, 
+import {
+  Users,
+  Pill,
+  AlertTriangle,
   Calendar,
   UserPlus,
   ShieldCheck,
@@ -15,7 +15,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const userRole = localStorage.getItem('role') || 'Staff';
-  
+
   // 1. Dashboard metrics states
   const [metrics, setMetrics] = useState({
     totalPatients: 0,
@@ -143,10 +143,10 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-grid animate-fade-in">
-      
+
       {/* ─── ROW 1: METRICS WIDGETS ─── */}
       <section className="metrics-row">
-        
+
         {/* Card 1: Total Patients */}
         <div className="metric-card glass-card">
           <div className="metric-header">
@@ -205,7 +205,7 @@ const Dashboard = () => {
 
       {/* ─── ROW 2: FEEDS AND CRITICAL ALERTS ─── */}
       <section className="dashboard-content-split">
-        
+
         {/* Left Column: Live Alerts & Expiry Tracking */}
         <div className="dashboard-column glass-card">
           <div className="panel-header">
@@ -248,28 +248,27 @@ const Dashboard = () => {
             <div className="staff-panel-split">
               {/* Form to Register Staff */}
               <form onSubmit={handleAddStaff} className="staff-form">
-                
+
                 {staffError && <div className="error-box select-none">{staffError}</div>}
                 {staffSuccess && <div className="success-box select-none">{staffSuccess}</div>}
 
                 <div className="form-row">
                   <div className="input-group">
                     <label>Full Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Shrisiddi Shetty"
+                    <input
+                      type="text"
+                      placeholder="e.g. pharmacist"
                       value={staffForm.name}
-                      onChange={(e) => setStaffForm({...staffForm, name: e.target.value})}
+                      onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
                     />
                   </div>
                   <div className="input-group">
                     <label>Role</label>
-                    <select 
+                    <select
                       value={staffForm.role}
-                      onChange={(e) => setStaffForm({...staffForm, role: e.target.value})}
+                      onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
                     >
                       <option value="Pharmacist">Pharmacist</option>
-                      <option value="Receptionist">Receptionist</option>
                       <option value="Nurse">Nurse</option>
                     </select>
                   </div>
@@ -277,41 +276,41 @@ const Dashboard = () => {
 
                 <div className="input-group">
                   <label>Email Address</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     placeholder="email@clinic.com"
                     value={staffForm.email}
-                    onChange={(e) => setStaffForm({...staffForm, email: e.target.value})}
+                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
                   />
                 </div>
 
                 <div className="input-group">
                   <label>Phone Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="10-digit number"
                     value={staffForm.phoneNumber}
-                    onChange={(e) => setStaffForm({...staffForm, phoneNumber: e.target.value})}
+                    onChange={(e) => setStaffForm({ ...staffForm, phoneNumber: e.target.value })}
                   />
                 </div>
 
                 <div className="form-row">
                   <div className="input-group">
                     <label>Password</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       placeholder="••••••••"
                       value={staffForm.password}
-                      onChange={(e) => setStaffForm({...staffForm, password: e.target.value})}
+                      onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
                     />
                   </div>
                   <div className="input-group">
                     <label>Confirm Password</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       placeholder="••••••••"
                       value={staffForm.confirmPassword}
-                      onChange={(e) => setStaffForm({...staffForm, confirmPassword: e.target.value})}
+                      onChange={(e) => setStaffForm({ ...staffForm, confirmPassword: e.target.value })}
                     />
                   </div>
                 </div>

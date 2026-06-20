@@ -170,9 +170,13 @@ const NewVisitPage = () => {
       // Create packed notes format
       const combinedNotes = `Blood Sugar: ${sugar || '-'} | Notes: ${notes ? notes.trim() : 'None'}`;
       
+      const pad = (num) => String(num).padStart(2, '0');
+      const localDate = new Date();
+      const localDateTimeString = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())} ${pad(localDate.getHours())}:${pad(localDate.getMinutes())}:${pad(localDate.getSeconds())}`;
+
       const visitData = {
         patient_id: selectedPatient.patient_id,
-        visit_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        visit_date: localDateTimeString,
         diagnosis: diagnosis ? diagnosis.trim() : 'General Visit',
         blood_pressure: blood_pressure || 'N/A',
         temperature: parsedTemp || 98.6,

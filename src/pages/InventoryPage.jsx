@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Plus, AlertTriangle, Pill } from 'lucide-react';
 import { inventoryService } from '../services/inventoryService';
+import { AuthContext } from '../context/AuthContext';
 import Table from '../components/common/Table';
 import Modal from '../components/common/Modal';
 import styles from './InventoryPage.module.css';
 
 const InventoryPage = () => {
+  const { user } = useContext(AuthContext);
+  const isDoctor = user && user.role === 'Doctor';
+
   const [medicines, setMedicines] = useState([]);
   const [filteredMeds, setFilteredMeds] = useState([]);
   const [activeTab, setActiveTab] = useState('All'); // 'All' | 'Low' | 'Expiring'
@@ -54,10 +58,10 @@ const InventoryPage = () => {
   // Check query parameters to open modal
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('openAdd') === 'true') {
+    if (searchParams.get('openAdd') === 'true' && isDoctor) {
       setIsModalOpen(true);
     }
-  }, [location]);
+  }, [location, isDoctor]);
 
   // Apply filters local logic
   const applyFilter = (list, tab) => {
@@ -180,10 +184,12 @@ const InventoryPage = () => {
     <div className={styles.inventoryCard}>
       <div className={styles.headerSection}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Medicine Catalog & Stock</h2>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <Plus size={16} />
-          <span>Add Medicine</span>
-        </button>
+        {isDoctor && (
+          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+            <Plus size={16} />
+            <span>Add Medicine</span>
+          </button>
+        )}
       </div>
 
       <div className={styles.controlsRow}>

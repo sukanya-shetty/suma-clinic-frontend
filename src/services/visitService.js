@@ -39,5 +39,10 @@ export const visitService = {
   deletePrescription: async (prescriptionId) => {
     const response = await api.delete(`/prescriptions/${prescriptionId}`);
     return response.data;
+  },
+
+  getRecentPrescriptions: async () => {
+    const response = await api.get('/prescriptions/recent/all');
+    return response.data;
   }
 };

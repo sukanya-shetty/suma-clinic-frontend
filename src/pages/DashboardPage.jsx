@@ -12,12 +12,14 @@ import {
   UserCheck,
   ShieldCheck,
   Eye,
-  EyeOff
+  EyeOff,
+  Trash2
 } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
 import { visitService } from '../services/visitService';
 import { staffService } from '../services/staffService';
+import { salesService } from '../services/salesService';
 import { AuthContext } from '../context/AuthContext';
 import StatCard from '../components/common/StatCard';
 import Table from '../components/common/Table';
@@ -29,12 +31,15 @@ const DashboardPage = () => {
 
   const [stats, setStats] = useState({
     todayPatients: 0,
+    todayDispensing: 0,
     totalMeds: 0,
     lowStockAlerts: 0,
     expiringAlerts: 0
   });
   const [lowStockMedsList, setLowStockMedsList] = useState([]);
   const [recentVisits, setRecentVisits] = useState([]);
+  const [recentPrescriptions, setRecentPrescriptions] = useState([]);
+  const [recentWalkInSales, setRecentWalkInSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -68,40 +73,72 @@ const DashboardPage = () => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const [patientsRes, medsRes, expiringRes, visitsRes] = await Promise.all([
-        patientService.getAllPatients(),
-        inventoryService.getAllMedicines(),
-        inventoryService.getExpiringMedicines(),
-        visitService.getRecentVisits()
-      ]);
+      if (user && user.role === 'Pharmacist') {
+        const [medsRes, expiringRes, salesRes, prescriptionsRes] = await Promise.all([
+          inventoryService.getAllMedicines(),
+          inventoryService.getExpiringMedicines(),
+          salesService.getAllSales({ sale_type: 'Direct Walk-in' }),
+          visitService.getRecentPrescriptions()
+        ]);
 
-      const patientsList = patientsRes.patients || patientsRes || [];
-      const todayPatientsCount = patientsList.filter(p => {
-        if (!p.registration_date) return false;
-        return p.registration_date.startsWith(todayStr);
-      }).length;
+        const medicinesList = medsRes.medicines || medsRes || [];
+        const lowStockMeds = medicinesList.filter(m => m.quantity < 10);
+        const lowStockNames = lowStockMeds.map(m => m.medicine_name.toUpperCase());
 
-      const medicinesList = medsRes.medicines || medsRes || [];
-      const lowStockMeds = medicinesList.filter(m => m.quantity < 10);
-      const lowStockNames = lowStockMeds.map(m => m.medicine_name.toUpperCase());
+        const walkInSalesList = salesRes.sales || salesRes || [];
+        const todayDispensingCount = walkInSalesList.filter(s => {
+          if (!s.sale_date) return false;
+          return s.sale_date.startsWith(todayStr);
+        }).length;
 
-      setStats({
-        todayPatients: todayPatientsCount,
-        totalMeds: medicinesList.length,
-        lowStockAlerts: lowStockMeds.length,
-        expiringAlerts: (expiringRes.medicines || expiringRes || []).length
-      });
+        setStats({
+          todayPatients: 0,
+          todayDispensing: todayDispensingCount,
+          totalMeds: medicinesList.length,
+          lowStockAlerts: lowStockMeds.length,
+          expiringAlerts: (expiringRes.medicines || expiringRes || []).length
+        });
 
-      setLowStockMedsList(lowStockNames);
-      setRecentVisits(visitsRes.visits || []);
+        setLowStockMedsList(lowStockNames);
+        setRecentWalkInSales(walkInSalesList);
+        setRecentPrescriptions(prescriptionsRes.prescriptions || []);
+      } else {
+        const [patientsRes, medsRes, expiringRes, visitsRes] = await Promise.all([
+          patientService.getAllPatients(),
+          inventoryService.getAllMedicines(),
+          inventoryService.getExpiringMedicines(),
+          visitService.getRecentVisits()
+        ]);
 
-      // Load staff list if Doctor
-      if (isDoctor) {
-        await loadStaffList();
+        const patientsList = patientsRes.patients || patientsRes || [];
+        const todayPatientsCount = patientsList.filter(p => {
+          if (!p.registration_date) return false;
+          return p.registration_date.startsWith(todayStr);
+        }).length;
+
+        const medicinesList = medsRes.medicines || medsRes || [];
+        const lowStockMeds = medicinesList.filter(m => m.quantity < 10);
+        const lowStockNames = lowStockMeds.map(m => m.medicine_name.toUpperCase());
+
+        setStats({
+          todayPatients: todayPatientsCount,
+          todayDispensing: 0,
+          totalMeds: medicinesList.length,
+          lowStockAlerts: lowStockMeds.length,
+          expiringAlerts: (expiringRes.medicines || expiringRes || []).length
+        });
+
+        setLowStockMedsList(lowStockNames);
+        setRecentVisits(visitsRes.visits || []);
+
+        if (isDoctor) {
+          await loadStaffList();
+        }
       }
     } catch (err) {
       console.error('Failed to load dashboard statistics:', err);
-      setError('Failed to retrieve dashboard statistics. Ensure WAMP and Node.js servers are running.');
+      const errMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(`Failed to retrieve dashboard statistics (${errMsg}). Ensure WAMP and Node.js servers are running.`);
     } finally {
       setLoading(false);
     }
@@ -170,9 +207,27 @@ const DashboardPage = () => {
     }
   };
 
+  const handleDeleteStaff = async (staffId, staffName, staffRole) => {
+    const confirmed = window.confirm(`Are you absolutely sure you want to delete the ${staffRole} "${staffName}"? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setStaffError('');
+      setStaffSuccess('');
+      const response = await staffService.deleteStaff(staffId);
+      if (response.success) {
+        setStaffSuccess(`${staffRole} "${staffName}" was successfully deleted.`);
+        await loadStaffList();
+      }
+    } catch (err) {
+      console.error(err);
+      setStaffError(err.response?.data?.message || err.response?.data?.error || 'Failed to delete staff member.');
+    }
+  };
+
   useEffect(() => {
     loadDashboardData();
-  }, [isDoctor]);
+  }, [isDoctor, user]);
 
   // ─── Live Patient Search with Debounce ───
   useEffect(() => {
@@ -238,7 +293,8 @@ const DashboardPage = () => {
   const formatVisitDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      const d = new Date(dateStr);
+      const normalizedStr = typeof dateStr === 'string' && !dateStr.includes('T') ? dateStr.replace(' ', 'T') : dateStr;
+      const d = new Date(normalizedStr);
       return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
       return dateStr;
@@ -291,89 +347,178 @@ const DashboardPage = () => {
 
       {/* ─── 4 STAT CARDS ─── */}
       <section className={styles.statsRow}>
-        <StatCard title="Today's Patients" value={loading ? '...' : stats.todayPatients} icon={<Users size={20} />} color="var(--primary)" />
+        {user?.role === 'Pharmacist' ? (
+          <StatCard title="Today's Dispensing" value={loading ? '...' : stats.todayDispensing} icon={<Pill size={20} />} color="var(--primary)" />
+        ) : (
+          <StatCard title="Today's Patients" value={loading ? '...' : stats.todayPatients} icon={<Users size={20} />} color="var(--primary)" />
+        )}
         <StatCard title="Total Medicines" value={loading ? '...' : stats.totalMeds} icon={<Pill size={20} />} color="var(--success)" />
         <StatCard title="Low Stock Alerts" value={loading ? '...' : stats.lowStockAlerts} icon={<AlertTriangle size={20} />} color="var(--danger)" />
         <StatCard title="Near-Expiry Alerts" value={loading ? '...' : stats.expiringAlerts} icon={<AlertTriangle size={20} />} color="var(--warning)" />
       </section>
 
       {/* ─── QUICK ACTIONS ─── */}
-      <section className={styles.quickActionsCard}>
-        <h3 className={styles.sectionTitle}>Quick Operations</h3>
-        <div className={styles.actionsRow}>
-          <button className="btn btn-primary" onClick={() => navigate('/patients?openRegister=true')}>
-            <UserPlus size={16} /><span>New Patient Registration</span>
-          </button>
-          <button className="btn btn-primary" onClick={() => navigate('/visits/new')}>
-            <PlusCircle size={16} /><span>Record Consultation Visit</span>
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate('/inventory?openAdd=true')}>
-            <Calendar size={16} /><span>Replenish Store Catalog</span>
-          </button>
-        </div>
-      </section>
+      {user?.role !== 'Nurse' && (
+        <section className={styles.quickActionsCard}>
+          <h3 className={styles.sectionTitle}>Quick Operations</h3>
+          <div className={styles.actionsRow}>
+            {user?.role === 'Pharmacist' ? (
+              <button className="btn btn-primary" onClick={() => navigate('/sales/walkin')}>
+                <PlusCircle size={16} /><span>Direct Medicine Dispensing</span>
+              </button>
+            ) : (
+              <>
+                <button className="btn btn-primary" onClick={() => navigate('/patients?openRegister=true')}>
+                  <UserPlus size={16} /><span>New Patient Registration</span>
+                </button>
+                <button className="btn btn-primary" onClick={() => navigate('/visits/new')}>
+                  <PlusCircle size={16} /><span>Record Consultation Visit</span>
+                </button>
+                <button className="btn btn-secondary" onClick={() => navigate('/inventory?openAdd=true')}>
+                  <Calendar size={16} /><span>Replenish Store Catalog</span>
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ─── FULL-WIDTH PATIENT SEARCH ─── */}
-      <section className={styles.searchCard}>
-        <div ref={searchRef} className={styles.searchWrapper}>
-          <div className={styles.searchInputBox}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search patient by name or phone number to view their history..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-            />
-            {searchLoading && (
-              <span className="spinner" style={{ width: 16, height: 16, borderTopColor: 'var(--primary)', flexShrink: 0 }}></span>
-            )}
-            {searchQuery && !searchLoading && (
-              <button onClick={clearSearch} className={styles.clearBtn} title="Clear">
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {showDropdown && (
-            <ul className={styles.searchDropdown}>
-              {searchResults.length === 0 ? (
-                <li className={styles.noResult}>No patient found for "{searchQuery}"</li>
-              ) : (
-                searchResults.map(p => (
-                  <li key={p.patient_id} className={styles.dropdownItem} onClick={() => handleSelectPatient(p)}>
-                    <div className={styles.dropdownName}>{(p.patient_name || '').toUpperCase()}</div>
-                    <div className={styles.dropdownMeta}>
-                      {p.age ? `${p.age} yrs` : ''}{p.gender ? ` · ${p.gender}` : ''}{p.phone_number ? ` · 📞 ${p.phone_number}` : ''}
-                    </div>
-                  </li>
-                ))
+      {user?.role !== 'Pharmacist' && (
+        <section className={styles.searchCard}>
+          <div ref={searchRef} className={styles.searchWrapper}>
+            <div className={styles.searchInputBox}>
+              <Search size={18} className={styles.searchIcon} />
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Search patient by name or phone number to view their history..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+              />
+              {searchLoading && (
+                <span className="spinner" style={{ width: 16, height: 16, borderTopColor: 'var(--primary)', flexShrink: 0 }}></span>
               )}
-            </ul>
-          )}
-        </div>
-      </section>
+              {searchQuery && !searchLoading && (
+                <button onClick={clearSearch} className={styles.clearBtn} title="Clear">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
-      {/* ─── RECENT VISITS ─── */}
-      <section className={styles.recentVisitsCard}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.sectionTitle}>Recent Consultations</h3>
-        </div>
-
-        {loading ? (
-          <div className="loading-inline" style={{ padding: '24px 0' }}>
-            <span className="spinner"></span> Loading consultations...
+            {showDropdown && (
+              <ul className={styles.searchDropdown}>
+                {searchResults.length === 0 ? (
+                  <li className={styles.noResult}>No patient found for "{searchQuery}"</li>
+                ) : (
+                  searchResults.map(p => (
+                    <li key={p.patient_id} className={styles.dropdownItem} onClick={() => handleSelectPatient(p)}>
+                      <div className={styles.dropdownName}>{(p.patient_name || '').toUpperCase()}</div>
+                      <div className={styles.dropdownMeta}>
+                        {p.age ? `${p.age} yrs` : ''}{p.gender ? ` · ${p.gender}` : ''}{p.phone_number ? ` · 📞 ${p.phone_number}` : ''}
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
           </div>
-        ) : (
-          <Table
-            headers={recentVisitsHeaders}
-            data={recentVisits}
-            renderRow={renderVisitRow}
-            emptyMessage="No consultations recorded recently."
-          />
-        )}
-      </section>
+        </section>
+      )}
+
+      {/* ─── RECENT VISITS / PHARMACIST DEDUCTIONS & WALK-IN TABLES ─── */}
+      {user?.role === 'Pharmacist' ? (
+        <div className={styles.pharmacistTablesRow}>
+          {/* Recent Walk-in Sales Table */}
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Recent Walk-in Sales</h3>
+            </div>
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading sales...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'sale_date', label: 'Date' },
+                  { key: 'medicine_name', label: 'Medicine' },
+                  { key: 'quantity_sold', label: 'Qty' }
+                ]}
+                data={recentWalkInSales.slice(0, 10)}
+                renderRow={(sale, index) => (
+                  <tr key={sale.sale_id || index}>
+                    <td>{formatVisitDate(sale.sale_date)}</td>
+                    <td style={{ fontWeight: 600 }}>{(sale.medicine_name || '').toUpperCase()}</td>
+                    <td>{sale.quantity_sold} units</td>
+                  </tr>
+                )}
+                emptyMessage="No walk-in sales recorded recently."
+              />
+            )}
+          </section>
+
+          {/* Recent Doctor Deductions Table */}
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Recent Doctor Deductions</h3>
+            </div>
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading deductions...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'created_at', label: 'Date' },
+                  { key: 'patient_name', label: 'Patient Name' },
+                  { key: 'medicine_name', label: 'Medicine' },
+                  { key: 'qty', label: 'Qty' },
+                  { key: 'dosage', label: 'Dosage' }
+                ]}
+                data={recentPrescriptions.slice(0, 10)}
+                renderRow={(presc, index) => (
+                  <tr key={presc.prescription_id || index}>
+                    <td>{formatVisitDate(presc.created_at || presc.visit_date)}</td>
+                    <td>
+                      <span 
+                        style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}
+                        onClick={() => presc.patient_id && navigate(`/patients/${presc.patient_id}`)}
+                      >
+                        {presc.patient_name ? presc.patient_name.toUpperCase() : 'UNKNOWN'}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{(presc.medicine_name || '').toUpperCase()}</td>
+                    <td>{presc.quantity} units</td>
+                    <td>{presc.dosage || '-'}</td>
+                  </tr>
+                )}
+                emptyMessage="No doctor prescriptions found."
+              />
+            )}
+          </section>
+        </div>
+      ) : (
+        <section className={styles.recentVisitsCard}>
+          <div className={styles.tableHeader}>
+            <h3 className={styles.sectionTitle}>Recent Consultations</h3>
+          </div>
+
+          {loading ? (
+            <div className="loading-inline" style={{ padding: '24px 0' }}>
+              <span className="spinner"></span> Loading consultations...
+            </div>
+          ) : (
+            <Table
+              headers={recentVisitsHeaders}
+              data={recentVisits}
+              renderRow={renderVisitRow}
+              emptyMessage="No consultations recorded recently."
+            />
+          )}
+        </section>
+      )}
 
       {/* ─── STAFF MANAGEMENT PANEL (DOCTOR ONLY) ─── */}
       {isDoctor && (
@@ -403,7 +548,7 @@ const DashboardPage = () => {
                     type="text"
                     id="staffName"
                     className="form-control"
-                    placeholder="e.g. Shrisiddi Shetty"
+                    placeholder="e.g. Mr. Abs"
                     value={staffForm.name}
                     onChange={e => setStaffForm({ ...staffForm, name: e.target.value })}
                     disabled={staffSubmitLoading}
@@ -422,7 +567,6 @@ const DashboardPage = () => {
                     required
                   >
                     <option value="Pharmacist">Pharmacist</option>
-                    <option value="Receptionist">Receptionist</option>
                     <option value="Nurse">Nurse</option>
                   </select>
                 </div>
@@ -537,6 +681,14 @@ const DashboardPage = () => {
                           </div>
                           <div className={styles.staffItemEmail}>{s.email}</div>
                         </div>
+                        <button
+                          type="button"
+                          className={styles.deleteStaffBtn}
+                          onClick={() => handleDeleteStaff(s.staff_id, s.name, s.role)}
+                          title={`Delete ${s.role}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </li>
                     ))}
                   </ul>

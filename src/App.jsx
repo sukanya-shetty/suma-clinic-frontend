@@ -26,13 +26,17 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/patients" element={<PatientsPage />} />
-              <Route path="/patients/:id" element={<PatientDetailPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               
               {/* Doctor Only Routes */}
               <Route element={<ProtectedRoute allowedRoles={['Doctor']} />}>
                 <Route path="/visits/new" element={<NewVisitPage />} />
+              </Route>
+              
+              {/* Doctor, Pharmacist, and Nurse Allowed Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['Doctor', 'Pharmacist', 'Nurse']} />}>
+                <Route path="/patients" element={<PatientsPage />} />
+                <Route path="/patients/:id" element={<PatientDetailPage />} />
               </Route>
               
               {/* Doctor and Pharmacist Allowed Routes */}

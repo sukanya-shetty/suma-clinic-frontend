@@ -49,10 +49,25 @@
 }
 
 /* Color variations for metrics icons */
-.metric-icon-box.blue { background-color: #e3f2fd; color: #1e88e5; }
-.metric-icon-box.green { background-color: #e8f5e9; color: #2e7d32; }
-.metric-icon-box.orange { background-color: #fff3e0; color: #f57c00; }
-.metric-icon-box.red { background-color: #ffeef2; color: #d90429; }
+.metric-icon-box.blue {
+  background-color: #e3f2fd;
+  color: #1e88e5;
+}
+
+.metric-icon-box.green {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.metric-icon-box.orange {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.metric-icon-box.red {
+  background-color: #ffeef2;
+  color: #d90429;
+}
 
 .metric-number {
   font-size: 2.2rem;
@@ -71,15 +86,24 @@
   gap: 4px;
 }
 
-.metric-trend.green { color: #2e7d32; }
-.text-warn { color: var(--warning); }
-.text-danger { color: var(--danger); }
+.metric-trend.green {
+  color: #2e7d32;
+}
+
+.text-warn {
+  color: var(--warning);
+}
+
+.text-danger {
+  color: var(--danger);
+}
 
 /* ─── 2. CONTENT AREA PANEL SPLITS ─── */
 .dashboard-content-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
+
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
   }
@@ -112,9 +136,21 @@
   padding: 4px 10px;
   border-radius: 20px;
 }
-.badge-count.red { background-color: #ffeef2; color: var(--danger); }
-.badge-count.blue { background-color: var(--primary-light); color: var(--primary); }
-.badge-count.orange { background-color: #fff3e0; color: var(--warning); }
+
+.badge-count.red {
+  background-color: #ffeef2;
+  color: var(--danger);
+}
+
+.badge-count.blue {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.badge-count.orange {
+  background-color: #fff3e0;
+  color: var(--warning);
+}
 
 /* Alerts Feed panel */
 .alerts-feed-container {
@@ -152,8 +188,14 @@
   flex-shrink: 0;
   margin-top: 2px;
 }
-.low_stock .feed-alert-icon { color: var(--warning); }
-.expiry_warning .feed-alert-icon { color: var(--danger); }
+
+.low_stock .feed-alert-icon {
+  color: var(--warning);
+}
+
+.expiry_warning .feed-alert-icon {
+  color: var(--danger);
+}
 
 .alert-msg {
   font-size: 0.9rem;
@@ -302,7 +344,8 @@
   font-size: 0.9rem;
 }
 
-.dashboard-table th, .dashboard-table td {
+.dashboard-table th,
+.dashboard-table td {
   padding: 12px;
   border-bottom: 1.5px solid var(--border-color);
 }

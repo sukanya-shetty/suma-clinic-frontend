@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { patientService } from '../services/patientService';
+import { AuthContext } from '../context/AuthContext';
 import SearchBar from '../components/common/SearchBar';
 import Table from '../components/common/Table';
 import Modal from '../components/common/Modal';
 import styles from './PatientsPage.module.css';
 
 const PatientsPage = () => {
+  const { user } = useContext(AuthContext);
+  const isDoctor = user && user.role === 'Doctor';
+
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,10 +36,10 @@ const PatientsPage = () => {
   // Handle opening modal from query parameter
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('openRegister') === 'true') {
+    if (searchParams.get('openRegister') === 'true' && isDoctor) {
       setIsModalOpen(true);
     }
-  }, [location]);
+  }, [location, isDoctor]);
 
   // Load initially
   const loadPatients = async () => {
@@ -174,13 +178,15 @@ const PatientsPage = () => {
             >
               View Detail
             </button>
-            <button 
-              onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)}
-              className="btn btn-primary"
-              style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-            >
-              New Visit
-            </button>
+            {isDoctor && (
+              <button 
+                onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)}
+                className="btn btn-primary"
+                style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+              >
+                New Visit
+              </button>
+            )}
           </div>
         </td>
       </tr>
@@ -191,10 +197,12 @@ const PatientsPage = () => {
     <div className={styles.patientCard}>
       <div className={styles.headerSection}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Patient Directory</h2>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <UserPlus size={16} />
-          <span>Register Patient</span>
-        </button>
+        {isDoctor && (
+          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+            <UserPlus size={16} />
+            <span>Register Patient</span>
+          </button>
+        )}
       </div>
 
       <div className={styles.controlsRow}>

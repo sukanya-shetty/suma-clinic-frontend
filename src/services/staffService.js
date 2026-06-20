@@ -10,5 +10,10 @@ export const staffService = {
     // staffData: { name, email, phoneNumber, password, confirmPassword, role }
     const response = await api.post('/staff/add-staff', staffData);
     return response.data;
+  },
+
+  deleteStaff: async (id) => {
+    const response = await api.delete(`/staff/${id}`);
+    return response.data;
   }
 };

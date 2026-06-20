@@ -43,6 +43,7 @@ const PatientDetailPage = () => {
   const [patientFormLoading, setPatientFormLoading] = useState(false);
 
   const openEditPatientModal = () => {
+    if (!isDoctor) return;
     if (!historyData || !historyData.patient) return;
     const p = historyData.patient;
     setPatientForm({
@@ -274,16 +275,18 @@ const PatientDetailPage = () => {
         </div>
 
         <div className={styles.actionPanel}>
-          <button onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)} className="btn btn-primary" style={{ width: '100%' }}>
-            <CalendarRange size={16} /><span>Record New Visit</span>
-          </button>
-          <button onClick={openEditPatientModal} className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <Pencil size={16} /><span>Edit Patient Info</span>
-          </button>
           {isDoctor && (
-            <button onClick={handleDeletePatient} className="btn btn-danger" style={{ width: '100%' }} disabled={deleteLoading}>
-              <Trash2 size={16} /><span>{deleteLoading ? 'Deleting...' : 'Delete Patient Record'}</span>
-            </button>
+            <>
+              <button onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)} className="btn btn-primary" style={{ width: '100%' }}>
+                <CalendarRange size={16} /><span>Record New Visit</span>
+              </button>
+              <button onClick={openEditPatientModal} className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <Pencil size={16} /><span>Edit Patient Info</span>
+              </button>
+              <button onClick={handleDeletePatient} className="btn btn-danger" style={{ width: '100%' }} disabled={deleteLoading}>
+                <Trash2 size={16} /><span>{deleteLoading ? 'Deleting...' : 'Delete Patient Record'}</span>
+              </button>
+            </>
           )}
         </div>
       </section>
@@ -316,7 +319,12 @@ const PatientDetailPage = () => {
                   </h4>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <span className={styles.visitDate}>
-                      {new Date(visit.visit_date).toLocaleDateString()} {new Date(visit.visit_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {(() => {
+                        const dateStr = visit.visit_date;
+                        const normalized = typeof dateStr === 'string' && !dateStr.includes('T') ? dateStr.replace(' ', 'T') : dateStr;
+                        const d = new Date(normalized);
+                        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      })()}
                     </span>
                     {isDoctor && editingVisitId !== visit.visit_id && (
                       <button className={styles.editBtn} onClick={() => startEdit(visit)} title="Edit this visit">

@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BarChart2, TrendingUp, Users, Pill, RefreshCw } from 'lucide-react';
 import { salesService } from '../services/salesService';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
+import { AuthContext } from '../context/AuthContext';
 import StatCard from '../components/common/StatCard';
 import Table from '../components/common/Table';
 import Badge from '../components/common/Badge';
 import styles from './ReportsPage.module.css';
 
 const ReportsPage = () => {
+  const { user } = useContext(AuthContext);
+  const isDoctor = user && user.role === 'Doctor';
+
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
@@ -25,15 +29,21 @@ const ReportsPage = () => {
     setLoading(true);
     setError('');
     try {
-      const [salesRes, patientsRes, medsRes] = await Promise.all([
+      const promises = [
         salesService.getAllSales({ startDate, endDate }),
-        patientService.getAllPatients(),
         inventoryService.getAllMedicines()
-      ]);
+      ];
+      if (isDoctor) {
+        promises.push(patientService.getAllPatients());
+      }
 
-      setSales(salesRes.sales || []);
-      setPatients(patientsRes.patients || patientsRes || []);
-      setMedicines(medsRes.medicines || medsRes || []);
+      const results = await Promise.all(promises);
+      
+      setSales(results[0].sales || []);
+      setMedicines(results[1].medicines || results[1] || []);
+      if (isDoctor) {
+        setPatients(results[2].patients || results[2] || []);
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to load report data. Ensure backend server is running.');
@@ -140,12 +150,14 @@ const ReportsPage = () => {
               icon={<TrendingUp size={20} />}
               color="var(--primary)"
             />
-            <StatCard
-              title="Total Patients"
-              value={patients.length}
-              icon={<Users size={20} />}
-              color="var(--primary-light)"
-            />
+            {isDoctor && (
+              <StatCard
+                title="Total Patients"
+                value={patients.length}
+                icon={<Users size={20} />}
+                color="var(--primary-light)"
+              />
+            )}
             <StatCard
               title="Low Stock Items"
               value={lowStockMeds.length}

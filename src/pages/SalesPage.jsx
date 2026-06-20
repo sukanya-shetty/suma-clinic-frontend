@@ -58,7 +58,8 @@ const SalesPage = () => {
   const formatSaleDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      const d = new Date(dateStr);
+      const normalizedStr = typeof dateStr === 'string' && !dateStr.includes('T') ? dateStr.replace(' ', 'T') : dateStr;
+      const d = new Date(normalizedStr);
       return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
       return dateStr;
