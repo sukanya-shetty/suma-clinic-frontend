@@ -13,7 +13,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const getApiUrl = () => {
+        if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          return 'https://clinic-backend.sumaclinic.workers.dev/api';
+        }
+        return 'http://localhost:3001/api';
+      };
+      const apiUrl = getApiUrl();
       const response = await axios.post(`${apiUrl}/auth/login`, {
         identifier: email, // identifier is used by the backend login controller
         password
