@@ -18,6 +18,12 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(`${apiUrl}/auth/login`, {
         identifier: email, // identifier is used by the backend login controller
         password
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
       });
 
       if (response.data.success) {

@@ -30,6 +30,12 @@ const Login = () => {
       const response = await axios.post(`${apiUrl}/auth/login`, {
         identifier,
         password,
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
       });
 
       if (response.data.success) {
@@ -86,6 +92,7 @@ const Login = () => {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
+                autoComplete="username"
               />
             </div>
           </div>
@@ -102,6 +109,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
           </div>
