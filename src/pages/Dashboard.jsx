@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import {
   Users,
   Pill,
@@ -46,17 +46,14 @@ const Dashboard = () => {
   // 4. Fetch dashboard info
   const fetchDashboardData = async () => {
     setLoading(true);
-    const token = localStorage.getItem('token');
-    const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
     try {
       // Fetch Patients, Medicines, Alerts, and Staff lists in parallel
       const [patientsRes, medsRes, alertsRes, expiringRes, staffRes] = await Promise.all([
-        axios.get('http://127.0.0.1:3001/api/patients', authHeaders),
-        axios.get('http://127.0.0.1:3001/api/inventory/medicines', authHeaders),
-        axios.get('http://127.0.0.1:3001/api/inventory/alerts', authHeaders),
-        axios.get('http://127.0.0.1:3001/api/inventory/expiring', authHeaders),
-        userRole === 'Doctor' ? axios.get('http://127.0.0.1:3001/api/staff/all', authHeaders) : Promise.resolve({ data: { staff: [] } })
+        api.get('/patients'),
+        api.get('/inventory/medicines'),
+        api.get('/inventory/alerts'),
+        api.get('/inventory/expiring'),
+        userRole === 'Doctor' ? api.get('/staff/all') : Promise.resolve({ data: { staff: [] } })
       ]);
 
       const medicinesList = medsRes.data.medicines || [];
@@ -103,13 +100,10 @@ const Dashboard = () => {
     }
 
     setStaffSubmitLoading(true);
-    const token = localStorage.getItem('token');
-
     try {
-      const response = await axios.post(
-        'http://127.0.0.1:3001/api/staff/add-staff',
-        staffForm,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        '/staff/add-staff',
+        staffForm
       );
 
       if (response.status === 201) {

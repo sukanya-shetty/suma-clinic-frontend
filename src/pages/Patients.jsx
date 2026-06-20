@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Search, 
   UserPlus, 
@@ -20,8 +20,7 @@ import './Patients.css';
 
 const Patients = () => {
   const userRole = localStorage.getItem('role') || 'Staff';
-  const token = localStorage.getItem('token');
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
 
   // 1. Core States
   const [patients, setPatients] = useState([]);
@@ -74,7 +73,7 @@ const Patients = () => {
   const loadPatients = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://127.0.0.1:3001/api/patients', authHeaders);
+      const res = await api.get('/patients');
       setPatients(res.data.patients || []);
     } catch (err) {
       console.error(err);
@@ -87,7 +86,7 @@ const Patients = () => {
   // Load Inventory for Autocomplete suggestions
   const loadMedicines = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:3001/api/inventory/medicines', authHeaders);
+      const res = await api.get('/inventory/medicines');
       setMedicines(res.data.medicines || []);
     } catch (err) {
       console.error('Failed to load medicines list:', err);
@@ -111,9 +110,9 @@ const Patients = () => {
       // Try searching by phone first, fallback to name query
       const isNum = /^\d+$/.test(searchQuery);
       const url = isNum 
-        ? `http://127.0.0.1:3001/api/patients/search?phone=${searchQuery}`
-        : `http://127.0.0.1:3001/api/patients/search?name=${searchQuery}`;
-      const res = await axios.get(url, authHeaders);
+        ? `/patients/search?phone=${searchQuery}`
+        : `/patients/search?name=${searchQuery}`;
+      const res = await api.get(url);
       setPatients(res.data.patients || []);
     } catch (err) {
       console.error(err);
@@ -128,7 +127,7 @@ const Patients = () => {
     setSelectedPatient(patient);
     setHistory(null);
     try {
-      const res = await axios.get(`http://127.0.0.1:3001/api/patients/${patient.patient_id}/history`, authHeaders);
+      const res = await api.get(`/patients/${patient.patient_id}/history`);
       setHistory(res.data);
     } catch (err) {
       console.error(err);
@@ -153,13 +152,13 @@ const Patients = () => {
     }
 
     try {
-      const res = await axios.post('http://127.0.0.1:3001/api/patients/register', {
+      const res = await api.post('/patients/register', {
         patient_name,
         phone_number,
         age: parseInt(age),
         gender,
         address
-      }, authHeaders);
+      });
 
       if (res.status === 201) {
         triggerNotification('success', 'Patient registered successfully!');
@@ -262,7 +261,7 @@ const Patients = () => {
 
     try {
       // STEP A: Create Visit
-      const visitRes = await axios.post('http://127.0.0.1:3001/api/visits', {
+      const visitRes = await api.post('/visits', {
         patient_id: selectedPatient.patient_id,
         visit_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
         diagnosis,
@@ -270,20 +269,20 @@ const Patients = () => {
         sugar_level: sugar_level || null,
         temperature: temp,
         notes
-      }, authHeaders);
+      });
 
       const visit_id = visitRes.data.visit.visit_id;
 
       // STEP B: Create Prescriptions sequentially
       for (const p of prescriptions) {
-        await axios.post('http://127.0.0.1:3001/api/prescriptions', {
+        await api.post('/prescriptions', {
           visit_id,
           medicine_id: p.medicine_id,
           dosage: p.dosage,
           quantity: p.quantity,
           duration_days: p.duration_days,
           instructions: p.instructions || null
-        }, authHeaders);
+        });
       }
 
       setVisitSuccess('Visit and prescriptions recorded successfully! Stock updated.');

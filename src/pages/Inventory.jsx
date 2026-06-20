@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   PlusCircle, 
   Search, 
@@ -17,8 +17,7 @@ import './Inventory.css';
 
 const Inventory = () => {
   const userRole = localStorage.getItem('role') || 'Staff';
-  const token = localStorage.getItem('token');
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
 
   // 1. Core States
   const [medicines, setMedicines] = useState([]);
@@ -52,8 +51,8 @@ const Inventory = () => {
     setLoading(true);
     try {
       const [medsRes, alertsRes] = await Promise.all([
-        axios.get('http://127.0.0.1:3001/api/inventory/medicines', authHeaders),
-        axios.get('http://127.0.0.1:3001/api/inventory/alerts', authHeaders)
+        api.get('/inventory/medicines'),
+        api.get('/inventory/alerts')
       ]);
       setMedicines(medsRes.data.medicines || []);
       setAlerts(alertsRes.data.alerts || []);
@@ -93,15 +92,14 @@ const Inventory = () => {
     setFormSubmitting(true);
 
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:3001/api/inventory/medicines',
+      const res = await api.post(
+        '/inventory/medicines',
         {
           name: name.trim(),
           price: pr,
           quantity: qty,
           expiryDate
-        },
-        authHeaders
+        }
       );
 
       if (res.status === 201 || res.status === 200) {
@@ -130,7 +128,7 @@ const Inventory = () => {
     }
 
     try {
-      const res = await axios.delete(`http://127.0.0.1:3001/api/inventory/medicines/${id}`, authHeaders);
+      const res = await api.delete(`/inventory/medicines/${id}`);
       if (res.status === 200) {
         triggerNotification('success', `${name.toUpperCase()} removed from store.`);
         loadInventory();

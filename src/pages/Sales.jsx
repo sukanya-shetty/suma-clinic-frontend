@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   ShoppingCart, 
   Trash2, 
@@ -17,8 +17,7 @@ import {
 import './Sales.css';
 
 const Sales = () => {
-  const token = localStorage.getItem('token');
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
 
   // 1. Inventory & Medicines list
   const [medicines, setMedicines] = useState([]);
@@ -46,7 +45,7 @@ const Sales = () => {
   const loadMedicines = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://127.0.0.1:3001/api/inventory/medicines', authHeaders);
+      const res = await api.get('/inventory/medicines');
       setMedicines(res.data.medicines || []);
     } catch (err) {
       console.error(err);
@@ -141,10 +140,9 @@ const Sales = () => {
       // Deduct stock for each item in the cart sequentially
       // Note: Backend endpoint is PUT /api/inventory/medicines/:id/stock with body { quantitySold }
       for (const item of cart) {
-        await axios.put(
-          `http://127.0.0.1:3001/api/inventory/medicines/${item.medicine_id}/stock`,
-          { quantitySold: item.qty },
-          authHeaders
+        await api.put(
+          `/inventory/medicines/${item.medicine_id}/stock`,
+          { quantitySold: item.qty }
         );
       }
 

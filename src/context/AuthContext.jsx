@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 export const AuthContext = createContext(null);
 
@@ -14,16 +14,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-      const response = await axios.post(`${apiUrl}/auth/login`, {
-        identifier: email, // identifier is used by the backend login controller
+      const response = await api.post('/auth/login', {
+        identifier: email,
         password
-      }, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        }
       });
 
       if (response.data.success) {

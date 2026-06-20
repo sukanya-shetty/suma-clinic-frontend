@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import { Stethoscope, Lock, Mail, AlertCircle } from 'lucide-react';
 import './Login.css';
 
@@ -26,16 +26,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-      const response = await axios.post(`${apiUrl}/auth/login`, {
+      const response = await api.post('/auth/login', {
         identifier,
         password,
-      }, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        }
       });
 
       if (response.data.success) {
