@@ -1,12 +1,21 @@
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
-  headers: {
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
+// Detect API URL at runtime — checks hostname FIRST to override build-time env
+function getApiBaseURL() {
+  // 1. Production: deployed on Cloudflare Pages — always use production backend
+  if (typeof window !== 'undefined' && window.location.hostname.includes('pages.dev')) {
+    return 'https://clinic-backend.suma-clinic.workers.dev/api';
   }
+  // 2. Build-time env var (for local dev with custom backend)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // 3. Local development fallback
+  return 'http://localhost:8787/api';
+}
+
+const api = axios.create({
+  baseURL: getApiBaseURL(),
 });
 
 // Request interceptor to attach JWT token to every request
