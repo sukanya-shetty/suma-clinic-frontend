@@ -18,7 +18,6 @@ const Login = () => {
     e.preventDefault();
     setError('');
     
-    // Safety check: Validate inputs are not empty
     if (!identifier || !password) {
       setError('Please fill in all fields.');
       return;
