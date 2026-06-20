@@ -13,7 +13,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const response = await axios.post(`${apiUrl}/auth/login`, {
         identifier: email, // identifier is used by the backend login controller
         password
       });
