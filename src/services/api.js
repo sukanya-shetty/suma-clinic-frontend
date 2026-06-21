@@ -11,6 +11,9 @@ function getApiBaseURL() {
     return import.meta.env.VITE_API_URL;
   }
   // 3. Local development fallback
+  if (typeof window !== 'undefined' && (window.location.port === '3000' || window.location.port === '5173')) {
+    return 'http://localhost:3001/api';
+  }
   return 'http://localhost:8787/api';
 }
 
