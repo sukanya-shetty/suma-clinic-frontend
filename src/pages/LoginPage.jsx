@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -89,6 +89,15 @@ const LoginPage = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px', marginBottom: '16px' }}>
+            <span 
+              onClick={() => navigate('/forgot-password')} 
+              style={{ fontSize: '13px', color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}
+            >
+              Forgot Password?
+            </span>
           </div>
 
           <button type="submit" className={styles.submitBtn} disabled={loading}>
