@@ -21,6 +21,12 @@ const ForgotPasswordPage = () => {
       return;
     }
 
+    // REQUIREMENT: Only allow abhinavashetty50@gmail.com
+    if (email.toLowerCase().trim() !== 'abhinavashetty50@gmail.com') {
+      setError('Password reset is only allowed for the administrator account.');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await api.post('/auth/forgot-password', { email });
