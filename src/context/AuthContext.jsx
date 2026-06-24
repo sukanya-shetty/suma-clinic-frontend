@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const name = localStorage.getItem('name');
     const role = localStorage.getItem('role');
-    return name && role ? { name, role } : null;
+    const department = localStorage.getItem('department');
+    return name && role ? { name, role, department } : null;
   });
 
   const login = async (email, password) => {
@@ -20,12 +21,17 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.data.success) {
-        const { token, role, name } = response.data;
+        const { token, role, name, department } = response.data;
         localStorage.setItem('token', token);
         localStorage.setItem('role', role);
         localStorage.setItem('name', name);
+        if (department) {
+          localStorage.setItem('department', department);
+        } else {
+          localStorage.removeItem('department');
+        }
         setToken(token);
-        setUser({ name, role });
+        setUser({ name, role, department });
         return { success: true };
       } else {
         return { success: false, message: response.data.message || 'Login failed' };
@@ -43,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('name');
+    localStorage.removeItem('department');
     setToken(null);
     setUser(null);
   };

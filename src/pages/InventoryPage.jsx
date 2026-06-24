@@ -9,7 +9,7 @@ import styles from './InventoryPage.module.css';
 
 const InventoryPage = () => {
   const { user } = useContext(AuthContext);
-  const isDoctor = user && user.role === 'Doctor';
+  const isAdmin = user && user.role === 'Admin';
 
   const [medicines, setMedicines] = useState([]);
   const [filteredMeds, setFilteredMeds] = useState([]);
@@ -58,10 +58,10 @@ const InventoryPage = () => {
   // Check query parameters to open modal
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('openAdd') === 'true' && isDoctor) {
+    if (searchParams.get('openAdd') === 'true' && isAdmin) {
       setIsModalOpen(true);
     }
-  }, [location, isDoctor]);
+  }, [location, isAdmin]);
 
   // Apply filters local logic
   const applyFilter = (list, tab) => {
@@ -184,7 +184,7 @@ const InventoryPage = () => {
     <div className={styles.inventoryCard}>
       <div className={styles.headerSection}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Medicine Catalog & Stock</h2>
-        {isDoctor && (
+        {isAdmin && (
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} />
             <span>Add Medicine</span>

@@ -15,5 +15,10 @@ export const staffService = {
   deleteStaff: async (id) => {
     const response = await api.delete(`/staff/${id}`);
     return response.data;
+  },
+
+  getActiveDoctors: async () => {
+    const response = await api.get('/staff/doctors');
+    return response.data;
   }
 };

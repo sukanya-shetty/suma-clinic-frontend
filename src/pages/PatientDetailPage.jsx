@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trash2, CalendarRange, HeartPulse, User, Pencil, X, Save, Check } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { visitService } from '../services/visitService';
+import { staffService } from '../services/staffService';
 import { AuthContext } from '../context/AuthContext';
 import Modal from '../components/common/Modal';
 import styles from './PatientDetailPage.module.css';
@@ -31,16 +32,33 @@ const PatientDetailPage = () => {
 
   // ─── Edit Patient State ───
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  const [doctorsList, setDoctorsList] = useState([]);
   const [patientForm, setPatientForm] = useState({
     patient_name: '',
     phone_number: '',
     age: '',
     gender: 'Male',
-    address: ''
+    address: '',
+    weight: '',
+    assigned_doctor_id: ''
   });
   const [patientFormError, setPatientFormError] = useState('');
   const [patientFormSuccess, setPatientFormSuccess] = useState('');
   const [patientFormLoading, setPatientFormLoading] = useState(false);
+
+  // Load doctors for patient assignment dropdown
+  const loadDoctors = async () => {
+    try {
+      const res = await staffService.getActiveDoctors();
+      setDoctorsList(res.doctors || []);
+    } catch (err) {
+      console.error('Failed to load doctors list', err);
+    }
+  };
+
+  useEffect(() => {
+    loadDoctors();
+  }, []);
 
   const openEditPatientModal = () => {
     if (!isDoctor) return;
@@ -51,7 +69,9 @@ const PatientDetailPage = () => {
       phone_number: p.phone_number || '',
       age: p.age || '',
       gender: p.gender || 'Male',
-      address: p.address || ''
+      address: p.address || '',
+      weight: p.weight || '',
+      assigned_doctor_id: p.assigned_doctor_id || ''
     });
     setPatientFormError('');
     setPatientFormSuccess('');
@@ -63,15 +83,21 @@ const PatientDetailPage = () => {
     setPatientFormError('');
     setPatientFormSuccess('');
 
-    const { patient_name, phone_number, age, gender, address } = patientForm;
+    const { patient_name, phone_number, age, gender, address, weight, assigned_doctor_id } = patientForm;
 
-    if (!patient_name || !age || !gender || !phone_number) {
-      setPatientFormError('Name, Age, Gender, and Phone Number are required.');
+    if (!patient_name || !age || !gender || !weight || !assigned_doctor_id) {
+      setPatientFormError('Name, Age, Gender, Weight, and Assigned Doctor are required.');
       return;
     }
 
-    if (phone_number.length !== 10) {
+    if (phone_number && phone_number.length !== 10) {
       setPatientFormError('Phone number must be exactly 10 digits.');
+      return;
+    }
+
+    const parsedWeight = parseFloat(weight);
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setPatientFormError('Weight must be a positive number.');
       return;
     }
 
@@ -79,10 +105,12 @@ const PatientDetailPage = () => {
     try {
       await patientService.updatePatient(id, {
         name: patient_name,
-        phone_number: phone_number,
+        phone_number: phone_number || null,
         age: parseInt(age),
         gender: gender,
-        address: address
+        address: address || null,
+        weight: parsedWeight,
+        assigned_doctor_id: parseInt(assigned_doctor_id)
       });
       setPatientFormSuccess('Patient details updated successfully!');
       await loadPatientHistory(); // reload patient info on screen
@@ -175,7 +203,6 @@ const PatientDetailPage = () => {
     setEditError('');
     const { diagnosis, blood_pressure, temperature, sugar, notes } = editForm;
 
-    // Only validate format if a value is entered (all fields are optional)
     if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
       setEditError('Blood pressure must follow SYS/DIA format (e.g. 120/80).');
       return;
@@ -263,6 +290,8 @@ const PatientDetailPage = () => {
           {[
             { label: 'Age', value: `${patient.age} years` },
             { label: 'Gender', value: patient.gender },
+            { label: 'Weight', value: patient.weight ? `${patient.weight} kg` : 'N/A' },
+            { label: 'Assigned Doctor', value: patient.doctor_name || 'N/A' },
             { label: 'Phone Number', value: patient.phone_number || 'N/A' },
             { label: 'Home Address', value: patient.address || 'N/A' },
             { label: 'Registered On', value: patient.registration_date ? new Date(patient.registration_date).toLocaleDateString() : '-' }
@@ -445,16 +474,16 @@ const PatientDetailPage = () => {
                         {visit.prescriptions.map((pres, pIdx) => (
                           <tr key={pres.prescription_id || pIdx} style={{ borderBottom: '1px solid var(--border)' }}>
                             <td style={{ padding: '8px', fontWeight: 600 }}>{(pres.medicine_name || '').toUpperCase()}</td>
-                            <td style={{ padding: '8px' }}>{pres.dosage}</td>
-                            <td style={{ padding: '8px' }}>{pres.duration_days ? `${pres.duration_days} days` : '-'}</td>
-                            <td style={{ padding: '8px' }}><strong>{pres.quantity}</strong> units</td>
-                            {isDoctor && (
+                            <td style={{ padding: '8px' }}>{pres.dosage_pattern ? `${pres.dosage_pattern} (${pres.dosage})` : pres.dosage}</td>
+                            <td style={{ padding: '8px' }}>{pres.days ? `${pres.days} days` : (pres.duration_days ? `${pres.duration_days} days` : '-')}</td>
+                            <td style={{ padding: '8px' }}><strong>{pres.quantity}</strong> units {pres.dispensed_at && <span style={{ color: 'var(--success)', fontSize: '0.75rem' }}>(Dispensed)</span>}</td>
+                            {isDoctor && !pres.dispensed_at && (
                               <td style={{ padding: '8px' }}>
                                 <button
                                   className={styles.deletePrescBtn}
                                   onClick={() => handleDeletePrescription(pres.prescription_id, pres.medicine_name)}
                                   disabled={deletingPrescId === pres.prescription_id}
-                                  title="Remove this medicine from prescription (stock restored)"
+                                  title="Remove this medicine from prescription"
                                 >
                                   {deletingPrescId === pres.prescription_id ? '...' : <Trash2 size={13} />}
                                 </button>
@@ -516,6 +545,39 @@ const PatientDetailPage = () => {
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="form-group">
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-dark)' }}>Weight (kg) *</label>
+              <input
+                type="number"
+                step="0.1"
+                className="form-control"
+                placeholder="e.g. 65.2"
+                value={patientForm.weight}
+                onChange={e => setPatientForm({ ...patientForm, weight: e.target.value })}
+                disabled={patientFormLoading}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-dark)' }}>Assigned Doctor *</label>
+              <select
+                className="form-control"
+                value={patientForm.assigned_doctor_id}
+                onChange={e => setPatientForm({ ...patientForm, assigned_doctor_id: e.target.value })}
+                disabled={patientFormLoading}
+                required
+              >
+                {doctorsList.map((doc) => (
+                  <option key={doc.user_id} value={doc.user_id}>
+                    {doc.name.toUpperCase()} ({doc.department || 'General Medicine'})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

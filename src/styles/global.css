@@ -163,3 +163,36 @@ a {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ─── PRINTING STYLES FOR INVOICE ─── */
+@media print {
+  body {
+    background-color: #fff !important;
+  }
+  .app-layout, .main-content, .content-container, aside, header, footer, button, .modal-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  .printable-invoice, .printable-invoice * {
+    visibility: visible !important;
+    display: block !important;
+  }
+  .printable-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .printable-invoice table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  .printable-invoice th, .printable-invoice td {
+    border-bottom: 1px solid #000 !important;
+    padding: 8px !important;
+  }
+}

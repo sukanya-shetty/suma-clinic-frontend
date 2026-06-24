@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { patientService } from '../services/patientService';
+import { staffService } from '../services/staffService';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from '../components/common/SearchBar';
 import Table from '../components/common/Table';
@@ -11,6 +12,7 @@ import styles from './PatientsPage.module.css';
 const PatientsPage = () => {
   const { user } = useContext(AuthContext);
   const isDoctor = user && user.role === 'Doctor';
+  const isAdmin = user && user.role === 'Admin';
 
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,12 +21,15 @@ const PatientsPage = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [doctorsList, setDoctorsList] = useState([]);
   const [patientForm, setPatientForm] = useState({
     patient_name: '',
     phone_number: '',
     age: '',
     gender: 'Male',
-    address: ''
+    address: '',
+    weight: '',
+    assigned_doctor_id: ''
   });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -32,6 +37,29 @@ const PatientsPage = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Load doctors for patient assignment dropdown
+  const loadDoctors = async () => {
+    try {
+      const res = await staffService.getActiveDoctors();
+      const docs = res.doctors || [];
+      setDoctorsList(docs);
+      if (docs.length > 0) {
+        setPatientForm(prev => ({
+          ...prev,
+          assigned_doctor_id: docs[0].user_id
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load doctors roster:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isModalOpen || isDoctor) {
+      loadDoctors();
+    }
+  }, [isModalOpen]);
 
   // Handle opening modal from query parameter
   useEffect(() => {
@@ -95,17 +123,23 @@ const PatientsPage = () => {
     setFormError('');
     setFormSuccess('');
 
-    const { patient_name, phone_number, age, gender, address } = patientForm;
+    const { patient_name, phone_number, age, gender, address, weight, assigned_doctor_id } = patientForm;
 
     // Validate inputs
-    if (!patient_name || !age || !gender) {
-      setFormError('Please fill in all required fields (Name, Age, Gender).');
+    if (!patient_name || !age || !gender || !weight || !assigned_doctor_id) {
+      setFormError('Please fill in all required fields (Name, Age, Gender, Weight, Assigned Doctor).');
       return;
     }
 
     const parsedAge = parseInt(age);
     if (isNaN(parsedAge) || parsedAge <= 0) {
       setFormError('Age must be a positive whole number.');
+      return;
+    }
+
+    const parsedWeight = parseFloat(weight);
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setFormError('Weight must be a positive number.');
       return;
     }
 
@@ -121,7 +155,9 @@ const PatientsPage = () => {
         phone_number: phone_number.trim() || null,
         age: parsedAge,
         gender,
-        address: address.trim() || null
+        address: address.trim() || null,
+        weight: parsedWeight,
+        assigned_doctor_id: parseInt(assigned_doctor_id)
       };
 
       const res = await patientService.registerPatient(data);
@@ -132,7 +168,9 @@ const PatientsPage = () => {
           phone_number: '',
           age: '',
           gender: 'Male',
-          address: ''
+          address: '',
+          weight: '',
+          assigned_doctor_id: doctorsList.length > 0 ? doctorsList[0].user_id : ''
         });
         loadPatients();
         setTimeout(() => {
@@ -153,6 +191,7 @@ const PatientsPage = () => {
     { key: 'phone_number', label: 'Phone' },
     { key: 'age', label: 'Age' },
     { key: 'gender', label: 'Gender' },
+    { key: 'weight', label: 'Weight (kg)' },
     { key: 'registration_date', label: 'Registered' },
     { key: 'actions', label: 'Actions' }
   ];
@@ -168,6 +207,7 @@ const PatientsPage = () => {
         <td>{patient.phone_number || 'N/A'}</td>
         <td>{patient.age} yrs</td>
         <td>{patient.gender}</td>
+        <td>{patient.weight ? `${patient.weight} kg` : '-'}</td>
         <td>{patient.registration_date ? new Date(patient.registration_date).toLocaleDateString() : '-'}</td>
         <td>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -287,6 +327,41 @@ const PatientsPage = () => {
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className="form-group">
+              <label htmlFor="weight">Weight (kg) *</label>
+              <input 
+                type="number" 
+                step="0.1"
+                id="weight"
+                className="form-control"
+                placeholder="e.g. 62.5"
+                value={patientForm.weight}
+                onChange={(e) => setPatientForm({ ...patientForm, weight: e.target.value })}
+                disabled={formLoading}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="assigned_doctor_id">Assigned Doctor *</label>
+              <select 
+                id="assigned_doctor_id"
+                className="form-control"
+                value={patientForm.assigned_doctor_id}
+                onChange={(e) => setPatientForm({ ...patientForm, assigned_doctor_id: e.target.value })}
+                disabled={formLoading}
+                required
+              >
+                {doctorsList.map((doc) => (
+                  <option key={doc.user_id} value={doc.user_id}>
+                    {doc.name.toUpperCase()} ({doc.department || 'General Medicine'})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

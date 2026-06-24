@@ -19,3 +19,13 @@
   --radius: 6px;
   --radius-lg: 8px;
 }
+
+/* Green and White Theme Override for Admin Role */
+.theme-admin {
+  --primary: #10B981;
+  --primary-light: #34D399;
+  --primary-bg: #ECFDF5;
+  --border: #D1FAE5;
+  --shadow: 0 1px 3px rgba(16, 185, 129, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}

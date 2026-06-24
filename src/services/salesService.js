@@ -16,6 +16,22 @@ export const salesService = {
   getDailySalesSummary: async () => {
     const response = await api.get('/sales/daily');
     return response.data;
+  },
+
+  dispensePrescription: async (dispenseData) => {
+    // dispenseData: { visit_id, items: [ { prescription_id, dispensed_quantity } ], signature_ref }
+    const response = await api.post('/sales/dispense', dispenseData);
+    return response.data;
+  },
+
+  getAllBills: async () => {
+    const response = await api.get('/sales/bills');
+    return response.data;
+  },
+
+  getBillDetails: async (id) => {
+    const response = await api.get(`/sales/bills/${id}`);
+    return response.data;
   }
 };
 export default salesService;

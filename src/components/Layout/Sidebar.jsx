@@ -17,17 +17,18 @@ import styles from './Sidebar.module.css';
 const Sidebar = () => {
   const { logout, user } = useContext(AuthContext);
 
+  const isAdmin = user && user.role === 'Admin';
   const isDoctor = user && user.role === 'Doctor';
   const isPharmacist = user && user.role === 'Pharmacist';
-  const isNurse = user && user.role === 'Nurse';
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, show: true },
-    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isDoctor || isPharmacist || isNurse },
+    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isAdmin || isDoctor || isPharmacist },
     { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isDoctor },
-    { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: isDoctor || isPharmacist },
-    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: isDoctor || isPharmacist },
-    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isDoctor || isPharmacist },
+    { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: isAdmin || isDoctor || isPharmacist },
+    { path: '/sales', label: 'Billing & Sales', icon: <DollarSign size={18} />, show: isAdmin || isPharmacist },
+    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: isPharmacist },
+    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isAdmin || isDoctor || isPharmacist },
   ].filter(item => item.show);
 
   return (
@@ -59,7 +60,9 @@ const Sidebar = () => {
         {user && (
           <div className={styles.userInfo}>
             <span className={styles.userName}>{user.name}</span>
-            <span className={styles.userRole}>{user.role}</span>
+            <span className={styles.userRole}>
+              {user.role} {user.department ? `(${user.department})` : ''}
+            </span>
           </div>
         )}
         <button onClick={logout} className={styles.logoutBtn}>

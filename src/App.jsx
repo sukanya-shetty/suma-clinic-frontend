@@ -26,22 +26,26 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
+              
+              {/* Admin and Doctor Allowed Reports */}
+              <Route element={<ProtectedRoute allowedRoles={['Admin', 'Doctor', 'Pharmacist']} />}>
+                <Route path="/reports" element={<ReportsPage />} />
+              </Route>
               
               {/* Doctor Only Routes */}
               <Route element={<ProtectedRoute allowedRoles={['Doctor']} />}>
                 <Route path="/visits/new" element={<NewVisitPage />} />
               </Route>
               
-              {/* Doctor, Pharmacist, and Nurse Allowed Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['Doctor', 'Pharmacist', 'Nurse']} />}>
+              {/* Admin, Doctor, and Pharmacist Allowed Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['Admin', 'Doctor', 'Pharmacist']} />}>
                 <Route path="/patients" element={<PatientsPage />} />
                 <Route path="/patients/:id" element={<PatientDetailPage />} />
+                <Route path="/inventory" element={<InventoryPage />} />
               </Route>
               
-              {/* Doctor and Pharmacist Allowed Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['Doctor', 'Pharmacist']} />}>
-                <Route path="/inventory" element={<InventoryPage />} />
+              {/* Admin and Pharmacist Allowed Sales Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['Admin', 'Pharmacist']} />}>
                 <Route path="/sales" element={<SalesPage />} />
                 <Route path="/sales/walkin" element={<WalkInSalePage />} />
               </Route>

@@ -1,19 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, Search, UserCheck, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Check } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
 import { visitService } from '../services/visitService';
 import SearchBar from '../components/common/SearchBar';
 import styles from './NewVisitPage.module.css';
-
-const DOSAGE_OPTIONS = [
-  '1-0-0', '0-1-0', '0-0-1', '1-1-0', '1-0-1', '0-1-1', '1-1-1',
-  '½-0-0', '0-0-½', '½-0-½', '½-½-½', '½-1-½', '1-0-½',
-  'SOS', 'SOS (Max 3/day)', 'Stat (Single dose)', 'BD (Twice daily)', 'TDS (Thrice daily)', 'QID (Four times daily)', 'OD (Once daily)', 'HS (Bedtime)', 'AC (Before meals)', 'PC (After meals)',
-  'Alternate days (1-0-0)', 'Alternate days (1-0-1)', 'Alternate days (1-1-1)', 'Every 2 days', 'Every 3 days', 'Every 4 days', 'Every 5 days', 'Once weekly', 'Twice weekly', 'Once in 15 days', 'Once monthly',
-  'Taper: 1-1-1 → 1-0-1 → 1-0-0', 'Taper: 2-0-2 → 1-0-1 → 1-0-0'
-];
 
 const NewVisitPage = () => {
   const location = useLocation();
@@ -101,11 +93,55 @@ const NewVisitPage = () => {
     setSearchResults([]);
   };
 
+  // Helper to calculate total dosage quantity on the frontend
+  const calculateQuantity = (medicineId, dosagePattern, days) => {
+    if (!dosagePattern || !days) return '';
+    
+    const cleanPattern = dosagePattern.replace(/½/g, '0.5');
+    const parts = cleanPattern.split('-').map(p => parseFloat(p));
+    
+    if (parts.length > 0 && parts.every(p => !isNaN(p))) {
+        const sum = parts.reduce((a, b) => a + b, 0);
+        const rawQty = sum * parseInt(days);
+        
+        const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(medicineId));
+        if (selectedMed) {
+            const nameLower = selectedMed.medicine_name.toLowerCase();
+            const isLiquid = nameLower.includes('syrup') || 
+                              nameLower.includes('susp') || 
+                              nameLower.includes('liquid') || 
+                              nameLower.includes('ml') || 
+                              nameLower.includes('soln') || 
+                              nameLower.includes('solution') || 
+                              nameLower.includes('drops') ||
+                              nameLower.includes('suspension');
+            if (isLiquid) {
+                return String(Math.round(rawQty * 100) / 100);
+            }
+        }
+        return String(Math.ceil(rawQty));
+    }
+    
+    let dailyTimes = 0;
+    const patternUpper = dosagePattern.toUpperCase();
+    if (patternUpper.includes('BD') || patternUpper.includes('TWICE')) dailyTimes = 2;
+    else if (patternUpper.includes('TDS') || patternUpper.includes('THRICE')) dailyTimes = 3;
+    else if (patternUpper.includes('QID') || patternUpper.includes('FOUR')) dailyTimes = 4;
+    else if (patternUpper.includes('OD') || patternUpper.includes('ONCE DAILY')) dailyTimes = 1;
+    else if (patternUpper.includes('HS') || patternUpper.includes('BEDTIME')) dailyTimes = 1;
+    
+    if (dailyTimes > 0) {
+        return String(dailyTimes * parseInt(days));
+    }
+    
+    return '';
+  };
+
   // Prescription cart operations
   const addPrescriptionRow = () => {
     setPrescriptionRows([
       ...prescriptionRows,
-      { medicine_id: '', dosage: '', duration_days: '', instructions: '', quantity: '', isCustom: false }
+      { medicine_id: '', dosage: '1-0-1', duration_days: '5', instructions: '', quantity: '', isCustom: false }
     ]);
   };
 
@@ -116,6 +152,16 @@ const NewVisitPage = () => {
   const updateRowField = (index, field, value) => {
     const updated = [...prescriptionRows];
     updated[index][field] = value;
+    
+    // Auto-calculate quantity
+    if (field === 'dosage' || field === 'duration_days' || field === 'medicine_id') {
+      const row = updated[index];
+      const autoQty = calculateQuantity(row.medicine_id, row.dosage, row.duration_days);
+      if (autoQty) {
+        row.quantity = autoQty;
+      }
+    }
+    
     setPrescriptionRows(updated);
   };
 
@@ -131,7 +177,6 @@ const NewVisitPage = () => {
 
     const { diagnosis, blood_pressure, temperature, sugar, notes } = visitForm;
 
-    // Only validate format if a value is entered (all fields are optional)
     if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
       setError('Blood pressure must follow SYS/DIA format (e.g. 120/80).');
       return;
@@ -146,20 +191,14 @@ const NewVisitPage = () => {
       }
     }
 
-    // Prescription validation — only validate rows that have a medicine selected
+    // Prescription validation
     for (let i = 0; i < prescriptionRows.length; i++) {
       const row = prescriptionRows[i];
-      if (!row.medicine_id) continue; // skip empty rows
+      if (!row.medicine_id) continue;
 
-      const qty = parseInt(row.quantity);
+      const qty = parseFloat(row.quantity);
       if (row.quantity && (isNaN(qty) || qty <= 0)) {
         setError(`Row #${i + 1}: Quantity must be a positive number.`);
-        return;
-      }
-
-      const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(row.medicine_id));
-      if (selectedMed && qty > selectedMed.quantity) {
-        setError(`Row #${i + 1}: Insufficient stock. Only ${selectedMed.quantity} units of ${selectedMed.medicine_name.toUpperCase()} available.`);
         return;
       }
     }
@@ -167,7 +206,6 @@ const NewVisitPage = () => {
     setLoading(true);
 
     try {
-      // Create packed notes format
       const combinedNotes = `Blood Sugar: ${sugar || '-'} | Notes: ${notes ? notes.trim() : 'None'}`;
       
       const pad = (num) => String(num).padStart(2, '0');
@@ -191,15 +229,16 @@ const NewVisitPage = () => {
         throw new Error('Backend failed to return a valid visit ID.');
       }
 
-      // 2. Submit only rows that have a medicine selected
+      // 2. Submit prescriptions (no stock deduction on backend now)
       for (const row of prescriptionRows) {
         if (!row.medicine_id) continue;
         await visitService.createPrescription({
           visit_id: visitId,
           medicine_id: parseInt(row.medicine_id),
-          dosage: (row.dosage && row.dosage.trim()) ? row.dosage.trim() : 'As directed',
-          quantity: parseInt(row.quantity) || 1,
-          duration_days: parseInt(row.duration_days) || null
+          dosage_pattern: row.dosage,
+          days: parseInt(row.duration_days),
+          dosage: row.dosage,
+          instructions: row.instructions || ''
         });
       }
 
@@ -265,8 +304,8 @@ const NewVisitPage = () => {
                 <span className={styles.metaValue}>{selectedPatient.age} yrs / {selectedPatient.gender}</span>
               </div>
               <div className={styles.metaGroup}>
-                <span className={styles.metaLabel}>Phone Number</span>
-                <span className={styles.metaValue}>{selectedPatient.phone_number || 'N/A'}</span>
+                <span className={styles.metaLabel}>Weight</span>
+                <span className={styles.metaValue}>{selectedPatient.weight ? `${selectedPatient.weight} kg` : 'N/A'}</span>
               </div>
             </div>
             <button className="btn btn-secondary" onClick={() => setSelectedPatient(null)} disabled={loading}>
@@ -353,7 +392,7 @@ const NewVisitPage = () => {
         {/* ─── SECTION 3: PRESCRIPTIONS ─── */}
         <section className={styles.prescriptionSection}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>3. Prescribed Medicines (Stock Deducts Automatically)</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>3. Prescribed Medicines (Calculates Dispensing Qty Automatically)</h3>
             <button 
               type="button" 
               className="btn btn-secondary" 
@@ -371,9 +410,6 @@ const NewVisitPage = () => {
           ) : (
             <div>
               {prescriptionRows.map((row, idx) => {
-                const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(row.medicine_id));
-                const availableStock = selectedMed ? selectedMed.quantity : 0;
-                
                 return (
                   <div key={idx} className={styles.prescriptionRow}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -385,17 +421,17 @@ const NewVisitPage = () => {
                         disabled={loading}
                         required
                       >
-                        <option value="">Select Tablet</option>
+                        <option value="">Select Medicine</option>
                         {medicinesList.map(m => (
                           <option key={m.medicine_id} value={m.medicine_id}>
-                            {m.medicine_name.toUpperCase()} (Available: {m.quantity})
+                            {m.medicine_name.toUpperCase()} (Stock: {m.quantity})
                           </option>
                         ))}
                       </select>
                     </div>
 
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ fontSize: '0.75rem' }}>Dosage</label>
+                      <label style={{ fontSize: '0.75rem' }}>Dosage *</label>
                       <select
                         className="form-control"
                         value={row.isCustom ? '__custom__' : row.dosage}
@@ -409,6 +445,7 @@ const NewVisitPage = () => {
                           }
                         }}
                         disabled={loading}
+                        required
                       >
                         <option value="">-- Select Dosage --</option>
 
@@ -466,7 +503,6 @@ const NewVisitPage = () => {
                         <option value="__custom__">✏️ Custom (type manually)</option>
                       </select>
 
-                      {/* Custom dosage text input */}
                       {row.isCustom && (
                         <input
                           type="text"
@@ -511,7 +547,7 @@ const NewVisitPage = () => {
                       <input 
                         type="number" 
                         className="form-control"
-                        placeholder="e.g. 10"
+                        placeholder="Calculated Qty"
                         value={row.quantity}
                         onChange={(e) => updateRowField(idx, 'quantity', e.target.value)}
                         disabled={loading}
