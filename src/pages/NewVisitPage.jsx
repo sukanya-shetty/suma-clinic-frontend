@@ -103,6 +103,10 @@ const NewVisitPage = () => {
 
   // Prescription cart operations
   const addPrescriptionRow = () => {
+    if (!selectedPatient) {
+      alert('Please select a patient first.');
+      return;
+    }
     setPrescriptionRows([
       ...prescriptionRows,
       { medicine_name: '', dosage: '', duration_days: '', instructions: '', quantity: 1, isCustom: false }
