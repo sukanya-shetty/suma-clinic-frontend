@@ -133,7 +133,13 @@ const PatientDetailPage = () => {
   // ─── Helpers for packed notes ───
   const parseSugar = (notes) => {
     if (!notes) return '';
-    const match = notes.match(/Blood Sugar:\s*([\d\w/.]+)/i);
+    const match = notes.match(/Blood Sugar:\s*([\d\w/.-]+)/i);
+    return match ? match[1] : '';
+  };
+
+  const parseWeight = (notes) => {
+    if (!notes) return '';
+    const match = notes.match(/Weight:\s*([\d\w/.-]+)/i);
     return match ? match[1] : '';
   };
 
@@ -149,8 +155,8 @@ const PatientDetailPage = () => {
     return notes;
   };
 
-  const buildNotes = (sugar, notes) =>
-    `Blood Sugar: ${sugar} | Notes: ${notes ? notes.trim() : 'None'}`;
+  const buildNotes = (sugar, weight, notes) =>
+    `Blood Sugar: ${sugar} | Weight: ${weight} | Notes: ${notes ? notes.trim() : 'None'}`;
 
   // ─── Start editing a visit ───
   const startEdit = (visit) => {
@@ -161,6 +167,7 @@ const PatientDetailPage = () => {
       blood_pressure: visit.blood_pressure || '',
       temperature: visit.temperature || '',
       sugar: parseSugar(visit.notes),
+      weight: parseWeight(visit.notes),
       notes: parseNotesOnly(visit.notes) === '-' ? '' : parseNotesOnly(visit.notes)
     });
   };
@@ -173,7 +180,7 @@ const PatientDetailPage = () => {
   // ─── Save edited visit ───
   const handleSaveEdit = async (visitId) => {
     setEditError('');
-    const { diagnosis, blood_pressure, temperature, sugar, notes } = editForm;
+    const { diagnosis, blood_pressure, temperature, sugar, weight, notes } = editForm;
 
     // Only validate format if a value is entered (all fields are optional)
     if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
@@ -196,7 +203,7 @@ const PatientDetailPage = () => {
         diagnosis: diagnosis ? diagnosis.trim() : 'General Visit',
         blood_pressure: blood_pressure || 'N/A',
         temperature: parsedTemp || 98.6,
-        notes: buildNotes(sugar || '-', notes)
+        notes: buildNotes(sugar || '-', weight || '-', notes)
       });
       setEditingVisitId(null);
       await loadPatientHistory(); // refresh
@@ -435,6 +442,17 @@ const PatientDetailPage = () => {
                           disabled={editLoading}
                         />
                       </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label>Weight (kg)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="e.g. 70"
+                          value={editForm.weight}
+                          onChange={e => setEditForm({ ...editForm, weight: e.target.value })}
+                          disabled={editLoading}
+                        />
+                      </div>
                     </div>
 
                     <div className="form-group" style={{ marginTop: 10 }}>
@@ -464,6 +482,7 @@ const PatientDetailPage = () => {
                       <div><span className={styles.vitalLabel}>BP: </span><span className={styles.vitalValue}>{visit.blood_pressure || '-'}</span></div>
                       <div><span className={styles.vitalLabel}>Sugar: </span><span className={styles.vitalValue}>{parseSugar(visit.notes) ? `${parseSugar(visit.notes)} mg/dL` : '-'}</span></div>
                       <div><span className={styles.vitalLabel}>Temp: </span><span className={styles.vitalValue}>{visit.temperature ? `${visit.temperature}°F` : '-'}</span></div>
+                      <div><span className={styles.vitalLabel}>Weight: </span><span className={styles.vitalValue}>{parseWeight(visit.notes) ? `${parseWeight(visit.notes)} kg` : '-'}</span></div>
                     </div>
 
                     <div className={styles.notesArea}>
