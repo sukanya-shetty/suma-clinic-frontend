@@ -70,7 +70,8 @@ const DashboardPage = () => {
         totalVisits: countRes.count || 0
       });
 
-      setRecentVisits(visitsRes.visits || []);
+      const sortedPatients = [...patientsList].sort((a, b) => b.patient_id - a.patient_id);
+      setRecentVisits(sortedPatients);
     } catch (err) {
       console.error('Failed to load dashboard statistics:', err);
       const errMsg = err.response?.data?.error || err.response?.data?.message || err.message;
@@ -137,13 +138,12 @@ const DashboardPage = () => {
     setShowDropdown(false);
   };
 
-  // ─── Recent Visits Table ───
+  // ─── Recent Patients Table ───
   const recentVisitsHeaders = [
-    { key: 'visit_date', label: 'Date/Time' },
+    { key: 'registration_date', label: 'Date Registered' },
     { key: 'patient_name', label: 'Patient Name' },
     { key: 'phone_number', label: 'Phone Number' },
     { key: 'demographics', label: 'Age/Gender' },
-    { key: 'diagnosis', label: 'Diagnosis' },
     { key: 'actions', label: 'Actions' }
   ];
 
@@ -158,26 +158,34 @@ const DashboardPage = () => {
     }
   };
 
-  const renderVisitRow = (visit, index) => (
-    <tr key={visit.visit_id || index}>
-      <td>{formatVisitDate(visit.visit_date)}</td>
+  const renderVisitRow = (patient, index) => (
+    <tr key={patient.patient_id || index}>
+      <td>{formatVisitDate(patient.registration_date)}</td>
       <td>
         <span style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}
-          onClick={() => navigate(`/patients/${visit.patient_id}`)}>
-          {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
+          onClick={() => navigate(`/patients/${patient.patient_id}`)}>
+          {patient.patient_name ? patient.patient_name.toUpperCase() : 'UNKNOWN'}
         </span>
       </td>
-      <td>{visit.phone_number || '-'}</td>
-      <td>{visit.age ? `${visit.age} yrs` : '-'} / {visit.gender || '-'}</td>
-      <td>{visit.diagnosis || '-'}</td>
+      <td>{patient.phone_number || '-'}</td>
+      <td>{patient.age ? `${patient.age} yrs` : '-'} / {patient.gender || '-'}</td>
       <td>
-        <button 
-          onClick={() => navigate(`/patients/${visit.patient_id}`)}
-          className="btn btn-secondary"
-          style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-        >
-          View History
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)}
+            className="btn btn-primary"
+            style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+          >
+            Record Visit
+          </button>
+          <button 
+            onClick={() => navigate(`/patients/${patient.patient_id}`)}
+            className="btn btn-secondary"
+            style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+          >
+            View History
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -251,10 +259,10 @@ const DashboardPage = () => {
         </section>
       )}
 
-      {/* ─── RECENT CONSULTATIONS TABLE (FULL WIDTH) ─── */}
+      {/* ─── RECENTLY REGISTERED PATIENTS (FULL WIDTH) ─── */}
       <section className={styles.recentVisitsCard}>
         <div className={styles.tableHeader}>
-          <h3 className={styles.sectionTitle}>Recent Consultations</h3>
+          <h3 className={styles.sectionTitle}>Recently Registered Patients</h3>
         </div>
 
         {loading ? (
@@ -266,7 +274,7 @@ const DashboardPage = () => {
             headers={recentVisitsHeaders}
             data={recentVisits}
             renderRow={renderVisitRow}
-            emptyMessage="No consultations recorded recently."
+            emptyMessage="No patients registered recently."
           />
         )}
       </section>
