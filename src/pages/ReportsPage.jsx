@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { BarChart2, Users, RefreshCw, UserCheck } from 'lucide-react';
+import { BarChart2, Users, RefreshCw, UserCheck, Download } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { AuthContext } from '../context/AuthContext';
 import StatCard from '../components/common/StatCard';
@@ -40,6 +40,37 @@ const ReportsPage = () => {
   const handleFilter = (e) => {
     e.preventDefault();
     loadReports();
+  };
+
+  const handleExportCSV = () => {
+    if (filteredPatients.length === 0) {
+      alert('No data available to export for this period.');
+      return;
+    }
+    const headers = ['Patient ID', 'Patient Name', 'Phone Number', 'Age', 'Gender', 'Address', 'Registration Date'];
+    const rows = filteredPatients.map(p => [
+      p.patient_id,
+      p.patient_name || '',
+      p.phone_number || '',
+      p.age || '',
+      p.gender || '',
+      (p.address || '').replace(/,/g, ' ').replace(/"/g, '""'),
+      p.registration_date ? new Date(p.registration_date).toLocaleDateString() : ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Suma_Clinic_Patients_Report_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // ─── Filter Patients by Registration Date Range ───
@@ -129,6 +160,25 @@ const ReportsPage = () => {
         <button type="submit" className="btn btn-primary" disabled={loading} style={{ alignSelf: 'flex-end' }}>
           <RefreshCw size={15} />
           {loading ? 'Loading...' : 'Generate Report'}
+        </button>
+        <button 
+          type="button" 
+          className="btn btn-primary" 
+          onClick={handleExportCSV} 
+          disabled={loading || filteredPatients.length === 0} 
+          style={{ 
+            alignSelf: 'flex-end', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px', 
+            height: '38px',
+            backgroundColor: '#16a34a',
+            borderColor: '#16a34a',
+            color: '#fff'
+          }}
+        >
+          <Download size={15} />
+          <span>Export Excel (CSV)</span>
         </button>
       </form>
 
