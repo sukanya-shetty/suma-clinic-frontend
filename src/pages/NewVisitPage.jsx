@@ -31,6 +31,7 @@ const NewVisitPage = () => {
     blood_pressure: '',
     temperature: '',
     sugar: '',
+    weight: '',
     notes: ''
   });
 
@@ -133,7 +134,7 @@ const NewVisitPage = () => {
       return;
     }
 
-    const { diagnosis, blood_pressure, temperature, sugar, notes } = visitForm;
+    const { diagnosis, blood_pressure, temperature, sugar, weight, notes } = visitForm;
 
     // Only validate format if a value is entered (all fields are optional)
     if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
@@ -166,7 +167,7 @@ const NewVisitPage = () => {
 
     try {
       // Create packed notes format
-      const combinedNotes = `Blood Sugar: ${sugar || '-'} | Notes: ${notes ? notes.trim() : 'None'}`;
+      const combinedNotes = `Blood Sugar: ${sugar || '-'} | Weight: ${weight || '-'} | Notes: ${notes ? notes.trim() : 'None'}`;
       
       const pad = (num) => String(num).padStart(2, '0');
       const localDate = new Date();
@@ -316,6 +317,19 @@ const NewVisitPage = () => {
                 placeholder="e.g. 98.6"
                 value={visitForm.temperature}
                 onChange={(e) => setVisitForm({ ...visitForm, temperature: e.target.value })}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="weight">Weight (kg)</label>
+              <input 
+                type="text" 
+                id="weight"
+                className="form-control"
+                placeholder="e.g. 70"
+                value={visitForm.weight}
+                onChange={(e) => setVisitForm({ ...visitForm, weight: e.target.value })}
                 disabled={loading}
               />
             </div>
