@@ -105,7 +105,7 @@ const NewVisitPage = () => {
   const addPrescriptionRow = () => {
     setPrescriptionRows([
       ...prescriptionRows,
-      { medicine_id: '', dosage: '', duration_days: '', instructions: '', quantity: '', isCustom: false }
+      { medicine_name: '', dosage: '', duration_days: '', instructions: '', quantity: 1, isCustom: false }
     ]);
   };
 
@@ -146,20 +146,14 @@ const NewVisitPage = () => {
       }
     }
 
-    // Prescription validation — only validate rows that have a medicine selected
+    // Prescription validation — only validate rows that have a medicine name entered
     for (let i = 0; i < prescriptionRows.length; i++) {
       const row = prescriptionRows[i];
-      if (!row.medicine_id) continue; // skip empty rows
+      if (!row.medicine_name) continue; // skip empty rows
 
       const qty = parseInt(row.quantity);
       if (row.quantity && (isNaN(qty) || qty <= 0)) {
         setError(`Row #${i + 1}: Quantity must be a positive number.`);
-        return;
-      }
-
-      const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(row.medicine_id));
-      if (selectedMed && qty > selectedMed.quantity) {
-        setError(`Row #${i + 1}: Insufficient stock. Only ${selectedMed.quantity} units of ${selectedMed.medicine_name.toUpperCase()} available.`);
         return;
       }
     }
@@ -191,12 +185,12 @@ const NewVisitPage = () => {
         throw new Error('Backend failed to return a valid visit ID.');
       }
 
-      // 2. Submit only rows that have a medicine selected
+      // 2. Submit only rows that have a medicine name entered
       for (const row of prescriptionRows) {
-        if (!row.medicine_id) continue;
+        if (!row.medicine_name) continue;
         await visitService.createPrescription({
           visit_id: visitId,
-          medicine_id: parseInt(row.medicine_id),
+          medicine_name: row.medicine_name,
           dosage: (row.dosage && row.dosage.trim()) ? row.dosage.trim() : 'As directed',
           quantity: parseInt(row.quantity) || 1,
           duration_days: parseInt(row.duration_days) || null
@@ -353,7 +347,7 @@ const NewVisitPage = () => {
         {/* ─── SECTION 3: PRESCRIPTIONS ─── */}
         <section className={styles.prescriptionSection}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>3. Prescribed Medicines (Stock Deducts Automatically)</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>3. Prescribed Medicines</h3>
             <button 
               type="button" 
               className="btn btn-secondary" 
@@ -371,27 +365,20 @@ const NewVisitPage = () => {
           ) : (
             <div>
               {prescriptionRows.map((row, idx) => {
-                const selectedMed = medicinesList.find(m => m.medicine_id === parseInt(row.medicine_id));
-                const availableStock = selectedMed ? selectedMed.quantity : 0;
-                
                 return (
                   <div key={idx} className={styles.prescriptionRow}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ fontSize: '0.75rem' }}>Medicine *</label>
-                      <select 
+                      <input 
+                        type="text"
+                        list="medicine-suggestions"
                         className="form-control"
-                        value={row.medicine_id}
-                        onChange={(e) => updateRowField(idx, 'medicine_id', e.target.value)}
+                        placeholder="Type medicine name..."
+                        value={row.medicine_name || ''}
+                        onChange={(e) => updateRowField(idx, 'medicine_name', e.target.value)}
                         disabled={loading}
                         required
-                      >
-                        <option value="">Select Tablet</option>
-                        {medicinesList.map(m => (
-                          <option key={m.medicine_id} value={m.medicine_id}>
-                            {m.medicine_name.toUpperCase()} (Available: {m.quantity})
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
 
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -506,18 +493,7 @@ const NewVisitPage = () => {
                       />
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ fontSize: '0.75rem' }}>Dispense Qty *</label>
-                      <input 
-                        type="number" 
-                        className="form-control"
-                        placeholder="e.g. 10"
-                        value={row.quantity}
-                        onChange={(e) => updateRowField(idx, 'quantity', e.target.value)}
-                        disabled={loading}
-                        required
-                      />
-                    </div>
+
 
                     <button 
                       type="button" 
@@ -556,6 +532,12 @@ const NewVisitPage = () => {
             )}
           </button>
         </div>
+
+        <datalist id="medicine-suggestions">
+          {medicinesList.map(m => (
+            <option key={m.medicine_id} value={m.medicine_name.toUpperCase()} />
+          ))}
+        </datalist>
       </form>
     </div>
   );

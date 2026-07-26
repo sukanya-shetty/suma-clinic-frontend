@@ -16,6 +16,11 @@ export const visitService = {
     return response.data;
   },
 
+  getVisitsCount: async () => {
+    const response = await api.get('/visits/count/all');
+    return response.data;
+  },
+
   updateVisit: async (id, visitData) => {
     const response = await api.put(`/visits/${id}`, visitData);
     return response.data;

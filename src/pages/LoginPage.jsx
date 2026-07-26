@@ -109,10 +109,6 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className={styles.roleTip}>
-          <p>Demo Credentials:</p>
-          <p style={{ fontWeight: 600, marginTop: 4 }}>dr.shetty@clinic.com / password123</p>
-        </div>
       </div>
     </div>
   );

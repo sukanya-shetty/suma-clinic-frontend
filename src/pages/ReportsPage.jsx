@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { BarChart2, TrendingUp, Users, Pill, RefreshCw } from 'lucide-react';
-import { salesService } from '../services/salesService';
+import { BarChart2, Users, RefreshCw, UserCheck } from 'lucide-react';
 import { patientService } from '../services/patientService';
-import { inventoryService } from '../services/inventoryService';
 import { AuthContext } from '../context/AuthContext';
 import StatCard from '../components/common/StatCard';
 import Table from '../components/common/Table';
-import Badge from '../components/common/Badge';
 import styles from './ReportsPage.module.css';
 
 const ReportsPage = () => {
   const { user } = useContext(AuthContext);
-  const isDoctor = user && user.role === 'Doctor';
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -19,9 +15,7 @@ const ReportsPage = () => {
   });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  const [sales, setSales] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,24 +23,11 @@ const ReportsPage = () => {
     setLoading(true);
     setError('');
     try {
-      const promises = [
-        salesService.getAllSales({ startDate, endDate }),
-        inventoryService.getAllMedicines()
-      ];
-      if (isDoctor) {
-        promises.push(patientService.getAllPatients());
-      }
-
-      const results = await Promise.all(promises);
-      
-      setSales(results[0].sales || []);
-      setMedicines(results[1].medicines || results[1] || []);
-      if (isDoctor) {
-        setPatients(results[2].patients || results[2] || []);
-      }
+      const res = await patientService.getAllPatients();
+      setPatients(res.patients || res || []);
     } catch (err) {
       console.error(err);
-      setError('Failed to load report data. Ensure backend server is running.');
+      setError('Failed to load patient report data. Ensure backend server is running.');
     } finally {
       setLoading(false);
     }
@@ -61,37 +42,50 @@ const ReportsPage = () => {
     loadReports();
   };
 
-  // ─── Computed Metrics ───
-  const consultationSales = sales.filter(s => s.sale_type === 'Consultation');
-  const walkInSales = sales.filter(s => s.sale_type !== 'Consultation');
-  const lowStockMeds = medicines.filter(m => m.quantity < 10);
-  const today = new Date();
-  const expiringMeds = medicines.filter(m => {
-    if (!m.expiry_date) return false;
-    const expiry = new Date(m.expiry_date);
-    return (expiry - today) / (1000 * 60 * 60 * 24) <= 30;
+  // ─── Filter Patients by Registration Date Range ───
+  const filteredPatients = patients.filter(p => {
+    if (!p.registration_date) return false;
+    const regDate = p.registration_date.split(' ')[0]; // YYYY-MM-DD
+    return regDate >= startDate && regDate <= endDate;
   });
 
-  // ─── Medicine-wise dispensing breakdown ───
-  const medicineSalesMap = {};
-  sales.forEach(s => {
-    const key = s.medicine_name || 'Unknown';
-    if (!medicineSalesMap[key]) {
-      medicineSalesMap[key] = { medicine: key, units: 0 };
-    }
-    medicineSalesMap[key].units += parseInt(s.quantity_sold || 0);
-  });
-  const medicineSalesRows = Object.values(medicineSalesMap).sort((a, b) => b.units - a.units);
+  // ─── Demographic Breakdown ───
+  let maleCount = 0;
+  let femaleCount = 0;
+  let otherCount = 0;
 
-  const medSalesHeaders = [
-    { key: 'medicine', label: 'Medicine Name' },
-    { key: 'units', label: 'Units Dispensed' }
+  filteredPatients.forEach(p => {
+    const gender = (p.gender || '').toLowerCase();
+    if (gender === 'male') maleCount++;
+    else if (gender === 'female') femaleCount++;
+    else otherCount++;
+  });
+
+  const totalFiltered = filteredPatients.length;
+  const getPercentage = (count) => {
+    if (totalFiltered === 0) return '0%';
+    return `${Math.round((count / totalFiltered) * 100)}%`;
+  };
+
+  const patientHeaders = [
+    { key: 'patient_name', label: 'Patient Name' },
+    { key: 'phone_number', label: 'Phone' },
+    { key: 'age', label: 'Age' },
+    { key: 'gender', label: 'Gender' },
+    { key: 'registration_date', label: 'Registration Date' }
   ];
 
-  const renderMedSaleRow = (row, idx) => (
-    <tr key={idx}>
-      <td style={{ fontWeight: 600 }}>{row.medicine.toUpperCase()}</td>
-      <td><strong>{row.units} units</strong></td>
+  const renderPatientRow = (patient, idx) => (
+    <tr key={patient.patient_id || idx}>
+      <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
+        {(patient.patient_name || '').toUpperCase()}
+      </td>
+      <td>{patient.phone_number || '-'}</td>
+      <td>{patient.age} yrs</td>
+      <td>{patient.gender}</td>
+      <td>
+        {patient.registration_date ? new Date(patient.registration_date).toLocaleDateString() : '-'}
+      </td>
     </tr>
   );
 
@@ -102,9 +96,9 @@ const ReportsPage = () => {
         <div>
           <h2 className={styles.pageTitle}>
             <BarChart2 size={22} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-            Clinic Reports &amp; Analytics
+            Clinic Patient Reports
           </h2>
-          <p className={styles.pageSubtitle}>Operational summaries for clinic management and decision support.</p>
+          <p className={styles.pageSubtitle}>Operational summaries for registered patients and demographic history.</p>
         </div>
       </div>
 
@@ -145,127 +139,68 @@ const ReportsPage = () => {
         <>
           <section className={styles.statsGrid}>
             <StatCard
-              title="Dispensed Transactions"
-              value={sales.length}
-              icon={<TrendingUp size={20} />}
+              title="Total Registered Patients"
+              value={patients.length}
+              icon={<Users size={20} />}
+              color="var(--success)"
+            />
+            <StatCard
+              title="New Registrations (This Period)"
+              value={totalFiltered}
+              icon={<UserCheck size={20} />}
               color="var(--primary)"
             />
-            {isDoctor && (
-              <StatCard
-                title="Total Patients"
-                value={patients.length}
-                icon={<Users size={20} />}
-                color="var(--primary-light)"
-              />
-            )}
-            <StatCard
-              title="Low Stock Items"
-              value={lowStockMeds.length}
-              icon={<Pill size={20} />}
-              color="var(--warning)"
-            />
           </section>
 
-          {/* ─── DISPENSING & INVENTORY BREAKDOWN ─── */}
+          {/* ─── DEMOGRAPHIC BREAKDOWN ─── */}
           <section className={styles.breakdownGrid}>
-            <div className={styles.breakdownCard}>
-              <h4 className={styles.cardTitle}>Dispensing Breakdown</h4>
+            <div className={styles.breakdownCard} style={{ gridColumn: 'span 2' }}>
+              <h4 className={styles.cardTitle}>Gender Distribution (This Period)</h4>
               <div className={styles.breakdownRows}>
                 <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Consultation (Prescription)</span>
+                  <span className={styles.breakdownLabel}>Male</span>
                   <span className={styles.breakdownValue}>
-                    {consultationSales.length} times
+                    {maleCount} ({getPercentage(maleCount)})
                   </span>
                 </div>
                 <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Direct Dispensing</span>
+                  <span className={styles.breakdownLabel}>Female</span>
                   <span className={styles.breakdownValue}>
-                    {walkInSales.length} times
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.breakdownCard}>
-              <h4 className={styles.cardTitle}>Inventory Status</h4>
-              <div className={styles.breakdownRows}>
-                <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Total Medicine Items</span>
-                  <span className={styles.breakdownValue}>{medicines.length} items</span>
-                </div>
-                <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Low Stock (&lt;10 units)</span>
-                  <span className={styles.breakdownValue} style={{ color: 'var(--warning)', fontWeight: 700 }}>
-                    {lowStockMeds.length} items
+                    {femaleCount} ({getPercentage(femaleCount)})
                   </span>
                 </div>
                 <div className={styles.breakdownItem}>
-                  <span className={styles.breakdownLabel}>Near Expiry (&lt;30 days)</span>
-                  <span className={styles.breakdownValue} style={{ color: 'var(--danger)', fontWeight: 700 }}>
-                    {expiringMeds.length} items
+                  <span className={styles.breakdownLabel}>Other / Unspecified</span>
+                  <span className={styles.breakdownValue}>
+                    {otherCount} ({getPercentage(otherCount)})
                   </span>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* ─── MEDICINE SALES TABLE ─── */}
+          {/* ─── PATIENT REGISTRATION TABLE ─── */}
           <section className={styles.tableSection}>
-            <h4 className={styles.tableSectionTitle}>Medicine Dispensing Summary Report</h4>
-            {medicineSalesRows.length === 0 ? (
+            <h4 className={styles.tableSectionTitle}>Patients Registered in Selected Period</h4>
+            {filteredPatients.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No dispensing logs found for selected date range.
+                No patient registrations found for the selected date range.
               </div>
             ) : (
               <Table
-                headers={medSalesHeaders}
-                data={medicineSalesRows}
-                renderRow={renderMedSaleRow}
-                emptyMessage="No medicine dispensing data for this period."
+                headers={patientHeaders}
+                data={filteredPatients}
+                renderRow={renderPatientRow}
+                emptyMessage="No patient registrations for this period."
               />
             )}
           </section>
-
-          {/* ─── EXPIRING MEDICINES LIST ─── */}
-          {expiringMeds.length > 0 && (
-            <section className={styles.tableSection}>
-              <h4 className={styles.tableSectionTitle} style={{ color: 'var(--danger)' }}>
-                ⚠️ Near-Expiry Medicines (Requires Attention)
-              </h4>
-              <Table
-                headers={[
-                  { key: 'medicine_name', label: 'Medicine' },
-                  { key: 'quantity', label: 'Stock' },
-                  { key: 'expiry_date', label: 'Expiry Date' },
-                  { key: 'supplier_name', label: 'Supplier' }
-                ]}
-                data={expiringMeds}
-                renderRow={(med, idx) => {
-                  const expiry = new Date(med.expiry_date);
-                  const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                  return (
-                    <tr key={med.medicine_id || idx}>
-                      <td style={{ fontWeight: 600 }}>{med.medicine_name.toUpperCase()}</td>
-                      <td>{med.quantity} units</td>
-                      <td>
-                        <span style={{ color: daysLeft <= 7 ? 'var(--danger)' : 'var(--warning)', fontWeight: 700 }}>
-                          {expiry.toLocaleDateString()} ({daysLeft}d left)
-                        </span>
-                      </td>
-                      <td>{med.supplier_name || '-'}</td>
-                    </tr>
-                  );
-                }}
-                emptyMessage=""
-              />
-            </section>
-          )}
         </>
       )}
 
       {loading && (
         <div className="loading-inline" style={{ padding: '48px', justifyContent: 'center' }}>
-          <span className="spinner"></span> Compiling clinic report data...
+          <span className="spinner"></span> Compiling patient report data...
         </div>
       )}
     </div>

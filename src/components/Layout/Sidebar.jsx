@@ -25,9 +25,7 @@ const Sidebar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, show: true },
     { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isDoctor || isPharmacist || isNurse },
     { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isDoctor },
-    { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: isDoctor || isPharmacist },
-    { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: isDoctor || isPharmacist },
-    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isDoctor || isPharmacist },
+    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isDoctor || isPharmacist || isNurse },
   ].filter(item => item.show);
 
   return (

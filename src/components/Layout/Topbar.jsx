@@ -15,16 +15,14 @@ const Topbar = () => {
     if (cleanPath === '/patients') return 'Patient Management';
     if (cleanPath.startsWith('/patients/')) return 'Patient Details';
     if (cleanPath === '/visits/new') return 'New Consultation Visit';
+    if (cleanPath === '/register-staff') return 'Staff Roster & Registration';
     if (cleanPath === '/inventory') return 'Medicine Inventory';
     if (cleanPath === '/sales') return 'Billing & Sales Records';
     return 'Suma Clinic';
   };
 
-  const handleScrollToStaff = () => {
-    const element = document.getElementById('staff-management-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleOpenRegisterStaff = () => {
+    window.open('/register-staff', '_blank');
   };
 
   const isDashboard = location.pathname.toLowerCase().replace(/\/$/, '') === '/dashboard';
@@ -38,7 +36,7 @@ const Topbar = () => {
           <span className={styles.userName}>{user.name}</span>
           <span className={styles.userRole}>{user.role}</span>
           {user.role === 'Doctor' && isDashboard && (
-            <button onClick={handleScrollToStaff} className={styles.addStaffBtn}>
+            <button onClick={handleOpenRegisterStaff} className={styles.addStaffBtn}>
               + Register Staff
             </button>
           )}

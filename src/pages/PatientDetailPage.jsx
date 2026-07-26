@@ -208,9 +208,27 @@ const PatientDetailPage = () => {
     }
   };
 
+  // ─── Delete visit ───
+  const handleDeleteVisit = async (visitId, visitDate) => {
+    const d = new Date(visitDate);
+    const dateStr = d.toLocaleDateString();
+    if (!window.confirm(`Are you sure you want to delete the visit record for ${dateStr}? This will permanently delete this consultation day's diagnosis and prescriptions.`)) {
+      return;
+    }
+
+    try {
+      setError('');
+      await visitService.deleteVisit(visitId);
+      await loadPatientHistory(); // refresh
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Failed to delete visit.');
+    }
+  };
+
   // ─── Delete prescription ───
   const handleDeletePrescription = async (prescriptionId, medicineName) => {
-    if (!window.confirm(`Remove "${medicineName.toUpperCase()}" from this prescription? Stock will be restored.`)) return;
+    if (!window.confirm(`Remove "${medicineName.toUpperCase()}" from this prescription?`)) return;
     setDeletingPrescId(prescriptionId);
     try {
       await visitService.deletePrescription(prescriptionId);
@@ -327,9 +345,37 @@ const PatientDetailPage = () => {
                       })()}
                     </span>
                     {isDoctor && editingVisitId !== visit.visit_id && (
-                      <button className={styles.editBtn} onClick={() => startEdit(visit)} title="Edit this visit">
-                        <Pencil size={14} />
-                      </button>
+                      <>
+                        <button className={styles.editBtn} onClick={() => startEdit(visit)} title="Edit this visit">
+                          <Pencil size={14} />
+                        </button>
+                        <button 
+                          className={styles.deleteVisitBtn} 
+                          onClick={() => handleDeleteVisit(visit.visit_id, visit.visit_date)} 
+                          title="Delete this visit"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderRadius: '4px',
+                            transition: 'background-color 0.15s, color 0.15s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = 'var(--danger)';
+                            e.currentTarget.style.backgroundColor = '#fee2e2';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--text-muted)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
                     )}
                     {isDoctor && editingVisitId === visit.visit_id && (
                       <button className={styles.cancelBtn} onClick={cancelEdit} title="Cancel editing">
@@ -437,7 +483,6 @@ const PatientDetailPage = () => {
                           <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Medicine</th>
                           <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Dosage</th>
                           <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Duration</th>
-                          <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Qty</th>
                           {isDoctor && <th style={{ padding: '8px', width: '40px' }}></th>}
                         </tr>
                       </thead>
@@ -447,14 +492,13 @@ const PatientDetailPage = () => {
                             <td style={{ padding: '8px', fontWeight: 600 }}>{(pres.medicine_name || '').toUpperCase()}</td>
                             <td style={{ padding: '8px' }}>{pres.dosage}</td>
                             <td style={{ padding: '8px' }}>{pres.duration_days ? `${pres.duration_days} days` : '-'}</td>
-                            <td style={{ padding: '8px' }}><strong>{pres.quantity}</strong> units</td>
                             {isDoctor && (
                               <td style={{ padding: '8px' }}>
                                 <button
                                   className={styles.deletePrescBtn}
                                   onClick={() => handleDeletePrescription(pres.prescription_id, pres.medicine_name)}
                                   disabled={deletingPrescId === pres.prescription_id}
-                                  title="Remove this medicine from prescription (stock restored)"
+                                  title="Remove this medicine from prescription"
                                 >
                                   {deletingPrescId === pres.prescription_id ? '...' : <Trash2 size={13} />}
                                 </button>

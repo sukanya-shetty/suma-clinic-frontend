@@ -9,10 +9,8 @@ import DashboardPage from './pages/DashboardPage';
 import PatientsPage from './pages/PatientsPage';
 import PatientDetailPage from './pages/PatientDetailPage';
 import NewVisitPage from './pages/NewVisitPage';
-import InventoryPage from './pages/InventoryPage';
-import SalesPage from './pages/SalesPage';
 import ReportsPage from './pages/ReportsPage';
-import WalkInSalePage from './pages/WalkInSalePage';
+import RegisterStaffPage from './pages/RegisterStaffPage';
 import './styles/global.css';
 
 function App() {
@@ -34,19 +32,13 @@ function App() {
               {/* Doctor Only Routes */}
               <Route element={<ProtectedRoute allowedRoles={['Doctor']} />}>
                 <Route path="/visits/new" element={<NewVisitPage />} />
+                <Route path="/register-staff" element={<RegisterStaffPage />} />
               </Route>
               
               {/* Doctor, Pharmacist, and Nurse Allowed Routes */}
               <Route element={<ProtectedRoute allowedRoles={['Doctor', 'Pharmacist', 'Nurse']} />}>
                 <Route path="/patients" element={<PatientsPage />} />
                 <Route path="/patients/:id" element={<PatientDetailPage />} />
-              </Route>
-              
-              {/* Doctor and Pharmacist Allowed Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['Doctor', 'Pharmacist']} />}>
-                <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/sales" element={<SalesPage />} />
-                <Route path="/sales/walkin" element={<WalkInSalePage />} />
               </Route>
             </Route>
           </Route>
