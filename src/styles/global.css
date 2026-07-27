@@ -164,3 +164,8 @@ a {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Force all text in the application to be bold */
+*, body, a, span, button, input, select, textarea, td, th, p, div, h1, h2, h3, h4, h5, h6 {
+  font-weight: bold !important;
+}
