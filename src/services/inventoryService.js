@@ -1,8 +1,8 @@
 import api from './api';
 
 export const inventoryService = {
-  getAllMedicines: async () => {
-    const response = await api.get('/inventory/medicines');
+  getAllMedicines: async (params = {}) => {
+    const response = await api.get('/inventory/medicines', { params });
     return response.data;
   },
 
@@ -14,6 +14,11 @@ export const inventoryService = {
 
   updateMedicineStock: async (id, quantitySold) => {
     const response = await api.put(`/inventory/medicines/${id}/stock`, { quantitySold });
+    return response.data;
+  },
+
+  updateMedicineDetails: async (id, medicineData) => {
+    const response = await api.put(`/inventory/medicines/${id}`, medicineData);
     return response.data;
   },
 

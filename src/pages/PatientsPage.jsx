@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { staffService } from '../services/staffService';
+import { visitService } from '../services/visitService';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from '../components/common/SearchBar';
 import Table from '../components/common/Table';
@@ -13,6 +14,8 @@ const PatientsPage = () => {
   const { user } = useContext(AuthContext);
   const isDoctor = user && user.role === 'Doctor';
   const isAdmin = user && user.role === 'Admin';
+  const isReceptionist = user && user.role === 'Receptionist';
+  const canRegister = isReceptionist || isAdmin;
 
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,18 +59,18 @@ const PatientsPage = () => {
   };
 
   useEffect(() => {
-    if (isModalOpen || isDoctor) {
+    if (isModalOpen || canRegister) {
       loadDoctors();
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, canRegister]);
 
   // Handle opening modal from query parameter
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('openRegister') === 'true' && isDoctor) {
+    if (searchParams.get('openRegister') === 'true' && canRegister) {
       setIsModalOpen(true);
     }
-  }, [location, isDoctor]);
+  }, [location, canRegister]);
 
   // Load initially
   const loadPatients = async () => {
@@ -126,8 +129,15 @@ const PatientsPage = () => {
     const { patient_name, phone_number, age, gender, address, weight, assigned_doctor_id } = patientForm;
 
     // Validate inputs
-    if (!patient_name || !age || !gender || !weight || !assigned_doctor_id) {
-      setFormError('Please fill in all required fields (Name, Age, Gender, Weight, Assigned Doctor).');
+    const requiredFieldsFilled = isReceptionist 
+      ? (patient_name && age && gender && assigned_doctor_id)
+      : (patient_name && age && gender && weight && assigned_doctor_id);
+
+    if (!requiredFieldsFilled) {
+      setFormError(isReceptionist 
+        ? 'Please fill in all required fields (Name, Age, Gender, Assigned Doctor).' 
+        : 'Please fill in all required fields (Name, Age, Gender, Weight, Assigned Doctor).'
+      );
       return;
     }
 
@@ -137,10 +147,18 @@ const PatientsPage = () => {
       return;
     }
 
-    const parsedWeight = parseFloat(weight);
-    if (isNaN(parsedWeight) || parsedWeight <= 0) {
-      setFormError('Weight must be a positive number.');
-      return;
+    let parsedWeight = 60.0;
+    if (!isReceptionist) {
+      parsedWeight = parseFloat(weight || 0);
+      if (isNaN(parsedWeight) || parsedWeight <= 0) {
+        setFormError('Weight must be a positive number.');
+        return;
+      }
+    } else if (weight !== undefined && weight !== null && weight !== '') {
+      const w = parseFloat(weight);
+      if (!isNaN(w) && w > 0) {
+        parsedWeight = w;
+      }
     }
 
     if (phone_number && !/^\d{10}$/.test(phone_number)) {
@@ -162,7 +180,25 @@ const PatientsPage = () => {
 
       const res = await patientService.registerPatient(data);
       if (res.patient) {
-        setFormSuccess('Patient registered successfully!');
+        try {
+          const pad = (num) => String(num).padStart(2, '0');
+          const localDate = new Date();
+          const localDateTimeString = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())} ${pad(localDate.getHours())}:${pad(localDate.getMinutes())}:${pad(localDate.getSeconds())}`;
+
+          await visitService.createVisit({
+            patient_id: res.patient.id || res.patient.patient_id,
+            visit_date: localDateTimeString,
+            doctor_id: parseInt(assigned_doctor_id),
+            diagnosis: 'Pending Triage',
+            blood_pressure: 'N/A',
+            temperature: null,
+            notes: 'Auto-created on registration'
+          });
+        } catch (visitErr) {
+          console.error('Failed to auto-create triage visit:', visitErr);
+        }
+
+        setFormSuccess('Patient registered and queued for Triage successfully!');
         setPatientForm({
           patient_name: '',
           phone_number: '',
@@ -218,15 +254,7 @@ const PatientsPage = () => {
             >
               View Detail
             </button>
-            {isDoctor && (
-              <button 
-                onClick={() => navigate(`/visits/new?patientId=${patient.patient_id}`)}
-                className="btn btn-primary"
-                style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-              >
-                New Visit
-              </button>
-            )}
+
           </div>
         </td>
       </tr>
@@ -237,7 +265,7 @@ const PatientsPage = () => {
     <div className={styles.patientCard}>
       <div className={styles.headerSection}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Patient Directory</h2>
-        {isDoctor && (
+        {canRegister && (
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <UserPlus size={16} />
             <span>Register Patient</span>
@@ -332,22 +360,24 @@ const PatientsPage = () => {
           </div>
 
           <div className={styles.formGrid}>
-            <div className="form-group">
-              <label htmlFor="weight">Weight (kg) *</label>
-              <input 
-                type="number" 
-                step="0.1"
-                id="weight"
-                className="form-control"
-                placeholder="e.g. 62.5"
-                value={patientForm.weight}
-                onChange={(e) => setPatientForm({ ...patientForm, weight: e.target.value })}
-                disabled={formLoading}
-                required
-              />
-            </div>
+            {!isReceptionist && (
+              <div className="form-group">
+                <label htmlFor="weight">Weight (kg) *</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  id="weight"
+                  className="form-control"
+                  placeholder="e.g. 62.5"
+                  value={patientForm.weight}
+                  onChange={(e) => setPatientForm({ ...patientForm, weight: e.target.value })}
+                  disabled={formLoading}
+                  required
+                />
+              </div>
+            )}
 
-            <div className="form-group">
+            <div className="form-group" style={{ gridColumn: isReceptionist ? 'span 2' : undefined }}>
               <label htmlFor="assigned_doctor_id">Assigned Doctor *</label>
               <select 
                 id="assigned_doctor_id"

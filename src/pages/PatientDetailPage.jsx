@@ -22,7 +22,7 @@ const PatientDetailPage = () => {
   // ─── Edit Visit State ───
   const [editingVisitId, setEditingVisitId] = useState(null);
   const [editForm, setEditForm] = useState({
-    diagnosis: '', blood_pressure: '', temperature: '', sugar: '', notes: ''
+    diagnosis: '', blood_pressure: '', temperature: '', sugar: '', notes: '', consultation_fee: '250'
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
@@ -189,7 +189,8 @@ const PatientDetailPage = () => {
       blood_pressure: visit.blood_pressure || '',
       temperature: visit.temperature || '',
       sugar: parseSugar(visit.notes),
-      notes: parseNotesOnly(visit.notes) === '-' ? '' : parseNotesOnly(visit.notes)
+      notes: parseNotesOnly(visit.notes) === '-' ? '' : parseNotesOnly(visit.notes),
+      consultation_fee: visit.consultation_fee !== undefined ? String(visit.consultation_fee) : '250'
     });
   };
 
@@ -201,7 +202,7 @@ const PatientDetailPage = () => {
   // ─── Save edited visit ───
   const handleSaveEdit = async (visitId) => {
     setEditError('');
-    const { diagnosis, blood_pressure, temperature, sugar, notes } = editForm;
+    const { diagnosis, blood_pressure, temperature, sugar, notes, consultation_fee } = editForm;
 
     if (blood_pressure && !/^\d+\/\d+$/.test(blood_pressure)) {
       setEditError('Blood pressure must follow SYS/DIA format (e.g. 120/80).');
@@ -223,7 +224,8 @@ const PatientDetailPage = () => {
         diagnosis: diagnosis ? diagnosis.trim() : 'General Visit',
         blood_pressure: blood_pressure || 'N/A',
         temperature: parsedTemp || 98.6,
-        notes: buildNotes(sugar || '-', notes)
+        notes: buildNotes(sugar || '-', notes),
+        consultation_fee: parseFloat(consultation_fee || '250')
       });
       setEditingVisitId(null);
       await loadPatientHistory(); // refresh
@@ -416,6 +418,18 @@ const PatientDetailPage = () => {
                           value={editForm.sugar}
                           onChange={e => setEditForm({ ...editForm, sugar: e.target.value })}
                           disabled={editLoading}
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label>Consultation Fee (₹)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="form-control"
+                          value={editForm.consultation_fee}
+                          onChange={e => setEditForm({ ...editForm, consultation_fee: e.target.value })}
+                          disabled={editLoading}
+                          required
                         />
                       </div>
                     </div>

@@ -231,9 +231,9 @@ const Sales = () => {
                 {completedInvoice.items.map(item => (
                   <tr key={item.medicine_id}>
                     <td>{item.medicine_name.toUpperCase()}</td>
-                    <td style={{ textAlign: 'right' }}>${item.price.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right' }}>₹{item.price.toFixed(2)}</td>
                     <td style={{ textAlign: 'center' }}>{item.qty}</td>
-                    <td style={{ textAlign: 'right' }}>${(item.price * item.qty).toFixed(2)}</td>
+                    <td style={{ textAlign: 'right' }}>₹{(item.price * item.qty).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -242,17 +242,17 @@ const Sales = () => {
             <div className="receipt-totals">
               <div className="totals-row">
                 <span>Subtotal:</span>
-                <span>${completedInvoice.subtotal.toFixed(2)}</span>
+                <span>₹{completedInvoice.subtotal.toFixed(2)}</span>
               </div>
               {completedInvoice.discount > 0 && (
                 <div className="totals-row discount-row text-warn">
                   <span>Discount ({completedInvoice.discount}%):</span>
-                  <span>-${completedInvoice.discountVal.toFixed(2)}</span>
+                  <span>-₹{completedInvoice.discountVal.toFixed(2)}</span>
                 </div>
               )}
               <div className="totals-row grand-total">
                 <span>Grand Total:</span>
-                <span>${completedInvoice.total.toFixed(2)}</span>
+                <span>₹{completedInvoice.total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -314,7 +314,7 @@ const Sales = () => {
                       <div className="med-info">
                         <span className="med-title">{med.medicine_name.toUpperCase()}</span>
                         <div className="med-details-row">
-                          <span className="med-price">${parseFloat(med.price).toFixed(2)}</span>
+                          <span className="med-price">₹{parseFloat(med.price).toFixed(2)}</span>
                           <span className={`med-qty ${outOfStock ? 'red' : lowStock ? 'warn' : 'green'}`}>
                             {outOfStock ? 'Out of stock' : `${med.quantity} left`}
                           </span>
@@ -400,8 +400,8 @@ const Sales = () => {
                             onChange={(e) => updateCartQty(item.medicine_id, e.target.value)}
                             className="item-qty-input"
                           />
-                          <span className="unit-price">@ ${item.price.toFixed(2)}</span>
-                          <span className="item-subtotal">${(item.price * item.qty).toFixed(2)}</span>
+                          <span className="unit-price">@ ₹{item.price.toFixed(2)}</span>
+                          <span className="item-subtotal">₹{(item.price * item.qty).toFixed(2)}</span>
                           <button 
                             type="button" 
                             onClick={() => removeFromCart(item.medicine_id)} 
@@ -436,17 +436,17 @@ const Sales = () => {
               <div className="checkout-summary-section">
                 <div className="summary-row">
                   <span>Subtotal:</span>
-                  <span>${getSubtotal().toFixed(2)}</span>
+                  <span>₹{getSubtotal().toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="summary-row text-warn">
                     <span>Discount Discount:</span>
-                    <span>-${getDiscountAmount().toFixed(2)}</span>
+                    <span>-₹{getDiscountAmount().toFixed(2)}</span>
                   </div>
                 )}
                 <div className="summary-row grand-total-row">
                   <span>Total Amount Due:</span>
-                  <span>${getGrandTotal().toFixed(2)}</span>
+                  <span>₹{getGrandTotal().toFixed(2)}</span>
                 </div>
               </div>
 

@@ -54,12 +54,7 @@ const ReportsPage = () => {
 
   useEffect(() => {
     loadReports();
-  }, []);
-
-  const handleFilter = (e) => {
-    e.preventDefault();
-    loadReports();
-  };
+  }, [startDate, endDate]);
 
   // ─── Computed Metrics ───
   const consultationSales = sales.filter(s => s.sale_type === 'Consultation');
@@ -109,7 +104,8 @@ const ReportsPage = () => {
       </div>
 
       {/* ─── DATE FILTER ─── */}
-      <form onSubmit={handleFilter} className={styles.filterBar}>
+      {/* ─── DATE FILTER ─── */}
+      <div className={styles.filterBar}>
         <div className={styles.filterGroup}>
           <label htmlFor="rep_start">From Date</label>
           <input
@@ -132,11 +128,7 @@ const ReportsPage = () => {
             disabled={loading}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ alignSelf: 'flex-end' }}>
-          <RefreshCw size={15} />
-          {loading ? 'Loading...' : 'Generate Report'}
-        </button>
-      </form>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 

@@ -21,6 +21,11 @@ export const visitService = {
     return response.data;
   },
 
+  triageVisit: async (id, triageData) => {
+    const response = await api.put(`/visits/${id}/triage`, triageData);
+    return response.data;
+  },
+
   deleteVisit: async (id) => {
     const response = await api.delete(`/visits/${id}`);
     return response.data;

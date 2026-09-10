@@ -32,6 +32,21 @@ export const salesService = {
   getBillDetails: async (id) => {
     const response = await api.get(`/sales/bills/${id}`);
     return response.data;
-  }
+  },
+
+  getPendingBillingVisits: async () => {
+    const response = await api.get('/sales/billing/pending/visits');
+    return response.data;
+  },
+
+  getPendingBillingDetails: async (visitId) => {
+    const response = await api.get('/sales/billing/pending', { params: { visit_id: visitId } });
+    return response.data;
+  },
+
+  collectPayment: async (paymentData) => {
+    const response = await api.post('/sales/billing/collect', paymentData);
+    return response.data;
+  },
 };
 export default salesService;

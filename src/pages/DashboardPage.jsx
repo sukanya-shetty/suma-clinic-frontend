@@ -15,7 +15,8 @@ import {
   Trash2,
   DollarSign,
   PenTool,
-  Printer
+  Printer,
+  Key
 } from 'lucide-react';
 import { patientService } from '../services/patientService';
 import { inventoryService } from '../services/inventoryService';
@@ -26,6 +27,7 @@ import { AuthContext } from '../context/AuthContext';
 import StatCard from '../components/common/StatCard';
 import Table from '../components/common/Table';
 import Modal from '../components/common/Modal';
+import BillPopup from '../components/common/BillPopup';
 import styles from './DashboardPage.module.css';
 
 const DEPARTMENTS = [
@@ -41,6 +43,8 @@ const DashboardPage = () => {
   const isAdmin = user && user.role === 'Admin';
   const isDoctor = user && user.role === 'Doctor';
   const isPharmacist = user && user.role === 'Pharmacist';
+  const isReceptionist = user && user.role === 'Receptionist';
+  const isNurse = user && user.role === 'Nurse';
 
   const [stats, setStats] = useState({
     todayPatients: 0,
@@ -60,8 +64,29 @@ const DashboardPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // ─── Nurse & Receptionist Dashboard States ───
+  const [pendingBillingQueue, setPendingBillingQueue] = useState([]);
+  const [triageQueue, setTriageQueue] = useState([]);
+  const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
+  const [triageVisitId, setTriageVisitId] = useState(null);
+  const [triagePatientName, setTriagePatientName] = useState('');
+  const [triageForm, setTriageForm] = useState({ 
+    blood_pressure: '120/80', 
+    temperature: '98.6', 
+    blood_sugar: '', 
+    pulse_rate: '', 
+    oxygen_level: '',
+    height: '',
+    weight: ''
+  });
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [selectedBillingVisit, setSelectedBillingVisit] = useState(null);
+  const [billingDetails, setBillingDetails] = useState(null);
+  const [collectPaymentLoading, setCollectPaymentLoading] = useState(false);
+
   // ─── Staff Account Management States ───
   const [staffList, setStaffList] = useState([]);
+  const [resetRequests, setResetRequests] = useState([]);
   const [staffForm, setStaffForm] = useState({
     name: '',
     email: '',
@@ -129,11 +154,12 @@ const DashboardPage = () => {
         setPendingPrescriptions(pendingRes.prescriptions || []);
       } else if (isAdmin) {
         // Admin Dashboard: Load staff roster, medicines catalog, alerts, and patients list
-        const [staffRes, medsRes, expiringRes, patientsRes] = await Promise.all([
+        const [staffRes, medsRes, expiringRes, patientsRes, resetsRes] = await Promise.all([
           staffService.getAllStaff(),
           inventoryService.getAllMedicines(),
           inventoryService.getExpiringMedicines(),
-          patientService.getAllPatients()
+          patientService.getAllPatients(),
+          staffService.getResetRequests()
         ]);
 
         const medicinesList = medsRes.medicines || medsRes || [];
@@ -153,7 +179,48 @@ const DashboardPage = () => {
 
         setLowStockMedsList(lowStockNames);
         setStaffList(roster);
+        setResetRequests(resetsRes.requests || []);
         setAdminPatients(patientsList);
+      } else if (isReceptionist) {
+        // Receptionist Dashboard: Load patient registries and pending bills
+        const [patientsRes, pendingBillingRes, recentVisitsRes] = await Promise.all([
+          patientService.getAllPatients(),
+          salesService.getPendingBillingVisits(),
+          visitService.getRecentVisits()
+        ]);
+
+        const patientsList = patientsRes.patients || patientsRes || [];
+        setAdminPatients(patientsList);
+        setRecentVisits(recentVisitsRes.visits || []);
+        setPendingBillingQueue(pendingBillingRes.visits || []);
+
+        setStats({
+          todayPatients: patientsList.length,
+          todayDispensing: (pendingBillingRes.visits || []).length,
+          totalMeds: 0,
+          lowStockAlerts: 0,
+          expiringAlerts: 0,
+          staffCount: 0
+        });
+      } else if (isNurse) {
+        // Nurse Dashboard: Load triage patient queue
+        const [visitsRes] = await Promise.all([
+          visitService.getRecentVisits()
+        ]);
+
+        const visitsList = visitsRes.visits || [];
+        const triageList = visitsList.filter(v => v.diagnosis === 'Pending Triage' || !v.blood_pressure || v.blood_pressure === 'N/A');
+        setTriageQueue(triageList);
+        setRecentVisits(visitsList);
+
+        setStats({
+          todayPatients: visitsList.length,
+          todayDispensing: 0,
+          totalMeds: 0,
+          lowStockAlerts: 0,
+          expiringAlerts: 0,
+          staffCount: 0
+        });
       } else {
         // Doctor Dashboard: Load consultations, patients count, inventory alerts
         const [patientsRes, medsRes, expiringRes, visitsRes] = await Promise.all([
@@ -277,6 +344,45 @@ const DashboardPage = () => {
     } catch (err) {
       console.error(err);
       setStaffError(err.response?.data?.message || err.response?.data?.error || 'Failed to delete staff member.');
+    }
+  };
+
+  const handleResetPassword = async (staffId, staffName, staffRole) => {
+    const newPassword = window.prompt(`Enter new password for ${staffRole} "${staffName}":`);
+    if (newPassword === null) return;
+    if (newPassword.trim().length < 6) {
+      alert('Password must be at least 6 characters long.');
+      return;
+    }
+
+    try {
+      setStaffError('');
+      setStaffSuccess('');
+      const response = await staffService.resetPassword(staffId, newPassword);
+      if (response.success) {
+        setStaffSuccess(`Password for ${staffRole} "${staffName}" was reset successfully.`);
+      }
+    } catch (err) {
+      console.error(err);
+      setStaffError(err.response?.data?.message || err.response?.data?.error || 'Failed to reset password.');
+    }
+  };
+
+  const handleApproveRejectRequest = async (requestId, userName, action) => {
+    const confirmed = window.confirm(`Are you sure you want to ${action} the password reset request for "${userName}"?`);
+    if (!confirmed) return;
+
+    try {
+      setStaffError('');
+      setStaffSuccess('');
+      const response = await staffService.handleResetRequest(requestId, action);
+      if (response.success) {
+        setStaffSuccess(response.message);
+        await loadDashboardData();
+      }
+    } catch (err) {
+      console.error(err);
+      setStaffError(err.response?.data?.message || err.response?.data?.error || `Failed to ${action} request.`);
     }
   };
 
@@ -408,6 +514,64 @@ const DashboardPage = () => {
     loadDashboardData();
   };
 
+  const handleTriageSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await visitService.triageVisit(triageVisitId, {
+        blood_pressure: triageForm.blood_pressure,
+        temperature: triageForm.temperature,
+        blood_sugar: triageForm.blood_sugar ? parseFloat(triageForm.blood_sugar) : null,
+        pulse_rate: triageForm.pulse_rate ? parseInt(triageForm.pulse_rate) : null,
+        oxygen_level: triageForm.oxygen_level ? parseInt(triageForm.oxygen_level) : null,
+        height: triageForm.height ? parseFloat(triageForm.height) : null,
+        weight: triageForm.weight ? parseFloat(triageForm.weight) : null
+      });
+      if (res.success) {
+        setIsTriageModalOpen(false);
+        setTriageVisitId(null);
+        setTriagePatientName('');
+        setTriageForm({ blood_pressure: '120/80', temperature: '98.6', blood_sugar: '', pulse_rate: '', oxygen_level: '', height: '', weight: '' });
+        loadDashboardData();
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to record triage vitals.');
+    }
+  };
+
+  const openBillingModal = async (visit) => {
+    setSelectedBillingVisit(visit);
+    setIsBillingModalOpen(true);
+    try {
+      const res = await salesService.getPendingBillingDetails(visit.visit_id);
+      setBillingDetails(res.prescriptions || []);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load pending bill details.');
+    }
+  };
+
+  const handleCollectPayment = async (paymentMethod) => {
+    if (!selectedBillingVisit) return;
+    setCollectPaymentLoading(true);
+    try {
+      const res = await salesService.collectPayment({
+        visit_id: selectedBillingVisit.visit_id,
+        payment_method: paymentMethod || 'UPI QR Code'
+      });
+      if (res.success) {
+        setIsBillingModalOpen(false);
+        setGeneratedBill(res.receipt);
+        setIsBillModalOpen(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to collect cashier payment.');
+    } finally {
+      setCollectPaymentLoading(false);
+    }
+  };
+
   const formatVisitDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
@@ -461,13 +625,41 @@ const DashboardPage = () => {
         {isPharmacist ? (
           <StatCard title="Today's Fulfillment" value={loading ? '...' : stats.todayDispensing} icon={<DollarSign size={20} />} color="var(--primary)" />
         ) : isAdmin ? (
-          <StatCard title="Staff Accounts" value={loading ? '...' : stats.staffCount} icon={<Users size={20} />} color="var(--primary)" />
+          <>
+            <StatCard title="Staff Accounts" value={loading ? '...' : stats.staffCount} icon={<Users size={20} />} color="var(--primary)" />
+            {resetRequests.length > 0 && (
+              <StatCard 
+                title="Reset Requests" 
+                value={loading ? '...' : resetRequests.length} 
+                icon={<AlertTriangle size={20} />} 
+                color="var(--danger)" 
+                onClick={() => {
+                  const element = document.getElementById('reset-requests-section');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              />
+            )}
+          </>
+        ) : isReceptionist ? (
+          <>
+            <StatCard title="Registered Patients" value={loading ? '...' : stats.todayPatients} icon={<Users size={20} />} color="var(--primary)" />
+            <StatCard title="Pending Payments" value={loading ? '...' : stats.todayDispensing} icon={<DollarSign size={20} />} color="var(--warning)" />
+          </>
+        ) : isNurse ? (
+          <StatCard title="Today's Patients" value={loading ? '...' : stats.todayPatients} icon={<Users size={20} />} color="var(--primary)" />
         ) : (
           <StatCard title="Today's Consultations" value={loading ? '...' : stats.todayPatients} icon={<Users size={20} />} color="var(--primary)" />
         )}
-        <StatCard title="Total Medicines" value={loading ? '...' : stats.totalMeds} icon={<Pill size={20} />} color="var(--success)" />
-        <StatCard title="Low Stock Alerts" value={loading ? '...' : stats.lowStockAlerts} icon={<AlertTriangle size={20} />} color="var(--danger)" />
-        <StatCard title="Near-Expiry Alerts" value={loading ? '...' : stats.expiringAlerts} icon={<AlertTriangle size={20} />} color="var(--warning)" />
+        
+        {(isAdmin || isPharmacist) && (
+          <>
+            <StatCard title="Total Medicines" value={loading ? '...' : stats.totalMeds} icon={<Pill size={20} />} color="var(--success)" />
+            <StatCard title="Low Stock Alerts" value={loading ? '...' : stats.lowStockAlerts} icon={<AlertTriangle size={20} />} color="var(--danger)" />
+            <StatCard title="Near-Expiry Alerts" value={loading ? '...' : stats.expiringAlerts} icon={<AlertTriangle size={20} />} color="var(--warning)" />
+          </>
+        )}
       </section>
 
       {/* ─── QUICK OPERATIONS ─── */}
@@ -479,11 +671,13 @@ const DashboardPage = () => {
               <a href="#staff-management-section" className="btn btn-primary">
                 <UserPlus size={16} /><span>Manage Staff Accounts</span>
               </a>
+              {resetRequests.length > 0 && (
+                <a href="#reset-requests-section" className="btn btn-danger" style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={16} /><span>Password Reset Requests ({resetRequests.length})</span>
+                </a>
+              )}
               <button className="btn btn-secondary" onClick={() => navigate('/inventory')}>
                 <PlusCircle size={16} /><span>Add / Restock Medicine</span>
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/reports')}>
-                <Printer size={16} /><span>View Business Reports</span>
               </button>
             </>
           ) : isPharmacist ? (
@@ -495,6 +689,19 @@ const DashboardPage = () => {
                 <DollarSign size={16} /><span>Billing & Sales Logs</span>
               </button>
             </>
+          ) : isReceptionist ? (
+            <>
+              <button className="btn btn-primary" onClick={() => navigate('/patients?openRegister=true')}>
+                <UserPlus size={16} /><span>Register New Patient</span>
+              </button>
+              <button className="btn btn-primary" onClick={() => navigate('/visits/new')}>
+                <PlusCircle size={16} /><span>Issue OPD Card (New Visit)</span>
+              </button>
+            </>
+          ) : isNurse ? (
+            <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Please log vitals from the active patient queue below.</span>
+          ) : isDoctor ? (
+            <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Please consult patients from the triage completed queue below.</span>
           ) : (
             <>
               <button className="btn btn-primary" onClick={() => navigate('/patients?openRegister=true')}>
@@ -573,7 +780,7 @@ const DashboardPage = () => {
                     <td>{formatVisitDate(sale.sale_date)}</td>
                     <td style={{ fontWeight: 600 }}>{sale.medicine_name.toUpperCase()}</td>
                     <td>{sale.quantity_sold} units</td>
-                    <td><strong>${parseFloat(sale.total_amount).toFixed(2)}</strong></td>
+                    <td><strong>₹{parseFloat(sale.total_amount).toFixed(2)}</strong></td>
                   </tr>
                 )}
                 emptyMessage="No direct walk-in sales recorded today."
@@ -582,54 +789,286 @@ const DashboardPage = () => {
           </section>
         </div>
       ) : isDoctor ? (
-        <section className={styles.recentVisitsCard}>
-          <div className={styles.tableHeader}>
-            <h3 className={styles.sectionTitle}>My Recent Consultations</h3>
-          </div>
-          {loading ? (
-            <div className="loading-inline" style={{ padding: '24px 0' }}>
-              <span className="spinner"></span> Loading consultations...
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%' }}>
+          {/* Triaged Patient Queue */}
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle} style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'inline-block' }}></span>
+                Patients Triaged by Nurse (Awaiting Consultation)
+              </h3>
             </div>
-          ) : (
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading waiting list...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'visit_date', label: 'Triage Time' },
+                  { key: 'patient_name', label: 'Patient Name' },
+                  { key: 'vitals', label: 'Triage Vitals' },
+                  { key: 'actions', label: 'Action' }
+                ]}
+                data={recentVisits.filter(v => v.diagnosis === 'Pending Consultation')}
+                renderRow={(visit, index) => (
+                  <tr key={visit.visit_id || index}>
+                    <td>{formatVisitDate(visit.visit_date)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--text-dark)' }}>
+                      {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '0.8rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="badge badge-secondary" style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px' }}>BP: {visit.blood_pressure || 'N/A'}</span>
+                        <span className="badge badge-secondary" style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px' }}>Temp: {visit.temperature ? `${visit.temperature}°F` : 'N/A'}</span>
+                        <span className="badge badge-secondary" style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px' }}>Sugar: {visit.blood_sugar ? `${visit.blood_sugar} mg/dL` : 'N/A'}</span>
+                        <span className="badge badge-secondary" style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px' }}>Pulse: {visit.pulse_rate ? `${visit.pulse_rate} bpm` : 'N/A'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <button 
+                        onClick={() => navigate('/visits/new', { 
+                          state: { 
+                            patient: { 
+                              patient_id: visit.patient_id, 
+                              patient_name: visit.patient_name, 
+                              assigned_doctor_id: user.id 
+                            } 
+                          } 
+                        })}
+                        className="btn btn-primary"
+                        style={{ padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold' }}
+                      >
+                        Start Consultation
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                emptyMessage="No triaged patients waiting for your consultation."
+              />
+            )}
+          </section>
+
+          {/* Completed Consultations */}
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Completed Consultations (Today)</h3>
+            </div>
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading history...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'visit_date', label: 'Date/Time' },
+                  { key: 'patient_name', label: 'Patient Name' },
+                  { key: 'diagnosis', label: 'Final Diagnosis' },
+                  { key: 'consultation_fee', label: 'Consult Fee (₹)' },
+                  { key: 'actions', label: 'Actions' }
+                ]}
+                data={recentVisits.filter(v => v.diagnosis !== 'Pending Consultation' && v.diagnosis !== 'Pending Triage')}
+                renderRow={(visit, index) => (
+                  <tr key={visit.visit_id || index}>
+                    <td>{formatVisitDate(visit.visit_date)}</td>
+                    <td>
+                      <span 
+                        style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}
+                        onClick={() => navigate(`/patients/${visit.patient_id}`)}
+                      >
+                        {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{visit.diagnosis || '-'}</td>
+                    <td>₹{parseFloat(visit.consultation_fee || 250).toFixed(2)}</td>
+                    <td>
+                      <button 
+                        onClick={() => navigate(`/patients/${visit.patient_id}`)}
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+                      >
+                        View Record
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                emptyMessage="No completed consultations recorded by you today."
+              />
+            )}
+          </section>
+        </div>
+      ) : isNurse ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%' }}>
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Triage Patient Queue (Vitals Pending)</h3>
+            </div>
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading triage queue...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'visit_date', label: 'Registered Time' },
+                  { key: 'patient_name', label: 'Patient Name' },
+                  { key: 'doctor_name', label: 'Assigned Doctor' },
+                  { key: 'diagnosis', label: 'Vitals Status' },
+                  { key: 'actions', label: 'Action' }
+                ]}
+                data={triageQueue}
+                renderRow={(visit, index) => (
+                  <tr key={visit.visit_id || index}>
+                    <td>{formatVisitDate(visit.visit_date)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                      {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
+                    </td>
+                    <td>{visit.doctor_name || 'General Physician'}</td>
+                    <td>
+                      <span className="badge badge-warning" style={{ backgroundColor: '#b45309', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                        Pending Vitals
+                      </span>
+                    </td>
+                    <td>
+                      <button 
+                        className="btn btn-primary"
+                        style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setTriageVisitId(visit.visit_id);
+                          setTriagePatientName(visit.patient_name);
+                          setIsTriageModalOpen(true);
+                        }}
+                      >
+                        Record Vitals
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                emptyMessage="No patients currently waiting in the triage queue."
+              />
+            )}
+          </section>
+
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Recent Hospital Visits</h3>
+            </div>
             <Table
               headers={[
                 { key: 'visit_date', label: 'Date/Time' },
                 { key: 'patient_name', label: 'Patient Name' },
-                { key: 'diagnosis', label: 'Diagnosis' },
-                { key: 'blood_pressure', label: 'Blood Pressure' },
-                { key: 'temperature', label: 'Temp' },
-                { key: 'actions', label: 'Actions' }
+                { key: 'bp', label: 'Blood Pressure' },
+                { key: 'temp', label: 'Temp' },
+                { key: 'sugar', label: 'Sugar (mg/dL)' },
+                { key: 'pulse', label: 'Pulse' },
+                { key: 'o2', label: 'SPO2' }
               ]}
-              data={recentVisits}
+              data={recentVisits.slice(0, 10)}
               renderRow={(visit, index) => (
                 <tr key={visit.visit_id || index}>
                   <td>{formatVisitDate(visit.visit_date)}</td>
-                  <td>
-                    <span 
-                      style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}
-                      onClick={() => navigate(`/patients/${visit.patient_id}`)}
-                    >
-                      {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
-                    </span>
-                  </td>
-                  <td>{visit.diagnosis || '-'}</td>
+                  <td>{visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}</td>
                   <td>{visit.blood_pressure || '-'}</td>
                   <td>{visit.temperature ? `${visit.temperature}°F` : '-'}</td>
+                  <td>{visit.blood_sugar ? `${visit.blood_sugar} mg/dL` : '-'}</td>
+                  <td>{visit.pulse_rate ? `${visit.pulse_rate} bpm` : '-'}</td>
+                  <td>{visit.oxygen_level ? `${visit.oxygen_level}%` : '-'}</td>
+                </tr>
+              )}
+              emptyMessage="No recent visits logged today."
+            />
+          </section>
+        </div>
+      ) : isReceptionist ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%' }}>
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Central Cash Desk - Unpaid Pharmacy Bills</h3>
+            </div>
+            {loading ? (
+              <div className="loading-inline" style={{ padding: '24px 0' }}>
+                <span className="spinner"></span> Loading pending bills...
+              </div>
+            ) : (
+              <Table
+                headers={[
+                  { key: 'visit_date', label: 'Date' },
+                  { key: 'patient_name', label: 'Patient Name' },
+                  { key: 'doctor_name', label: 'Doctor' },
+                  { key: 'unpaid_items_count', label: 'Prescribed Items' },
+                  { key: 'estimated_bill_amount', label: 'Est. Total' },
+                  { key: 'actions', label: 'Action' }
+                ]}
+                data={pendingBillingQueue}
+                renderRow={(visit, index) => (
+                  <tr key={visit.visit_id || index}>
+                    <td>{formatVisitDate(visit.visit_date)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                      {visit.patient_name ? visit.patient_name.toUpperCase() : 'UNKNOWN'}
+                    </td>
+                    <td>{visit.doctor_name}</td>
+                    <td>{visit.unpaid_items_count} items</td>
+                    <td><strong>₹{parseFloat(visit.estimated_bill_amount || 0).toFixed(2)}</strong></td>
+                    <td>
+                      <button 
+                        className="btn btn-primary"
+                        style={{ padding: '4px 10px', fontSize: '0.8rem', backgroundColor: '#059669', borderColor: '#059669' }}
+                        onClick={() => openBillingModal(visit)}
+                      >
+                        Collect &amp; Print Bill
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                emptyMessage="No pending pharmacy payments in queue."
+              />
+            )}
+          </section>
+
+          <section className={styles.recentVisitsCard}>
+            <div className={styles.tableHeader}>
+              <h3 className={styles.sectionTitle}>Active Patients Directory</h3>
+              <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => navigate('/patients?openRegister=true')}>
+                Register New Patient
+              </button>
+            </div>
+            <Table
+              headers={[
+                { key: 'patient_name', label: 'Patient Name' },
+                { key: 'age_gender', label: 'Age / Gender' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'address', label: 'Address' },
+                { key: 'actions', label: 'Actions' }
+              ]}
+              data={adminPatients.slice(0, 10)}
+              renderRow={(patient, index) => (
+                <tr key={patient.patient_id || index}>
+                  <td style={{ fontWeight: 600 }}>{patient.patient_name.toUpperCase()}</td>
+                  <td>{patient.age} Yrs / {patient.gender}</td>
+                  <td>{patient.phone_number}</td>
+                  <td>{patient.address || '-'}</td>
                   <td>
                     <button 
-                      onClick={() => navigate(`/patients/${visit.patient_id}`)}
+                      onClick={() => navigate(`/patients/${patient.patient_id}`)}
                       className="btn btn-secondary"
+                      style={{ padding: '4px 8px', fontSize: '0.8rem', marginRight: '6px' }}
+                    >
+                      Medical History
+                    </button>
+                    <button 
+                      onClick={() => navigate('/visits/new', { state: { patient } })}
+                      className="btn btn-primary"
                       style={{ padding: '4px 8px', fontSize: '0.8rem' }}
                     >
-                      View Record
+                      New Visit Token
                     </button>
                   </td>
                 </tr>
               )}
-              emptyMessage="No consultations recorded by you today."
+              emptyMessage="No patients registered yet."
             />
-          )}
-        </section>
+          </section>
+        </div>
       ) : null}
 
       {/* ─── GLOBAL PATIENT REGISTRY & ASSIGNED DOCTORS (ADMIN ONLY) ─── */}
@@ -882,6 +1321,15 @@ const DashboardPage = () => {
                         <button
                           type="button"
                           className={styles.deleteStaffBtn}
+                          style={{ marginRight: '8px', color: 'var(--primary)' }}
+                          onClick={() => handleResetPassword(s.staff_id, s.name, s.role)}
+                          title={`Reset ${s.role} Password`}
+                        >
+                          <Key size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.deleteStaffBtn}
                           onClick={() => handleDeleteStaff(s.staff_id, s.name, s.role)}
                           title={`Delete ${s.role}`}
                         >
@@ -893,6 +1341,62 @@ const DashboardPage = () => {
                 </div>
               )}
             </div>
+
+            {/* Password Reset Requests */}
+            {resetRequests.length > 0 && (
+              <div id="reset-requests-section" className={styles.staffListContainer} style={{ marginTop: '24px' }}>
+                <h4 className={styles.formSubtitle} style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={18} /> Pending Password Reset Requests ({resetRequests.length})
+                </h4>
+                <div className={styles.staffListWrapper}>
+                  <ul className={styles.staffList}>
+                    {resetRequests.map(r => (
+                      <li key={r.request_id} className={styles.staffItem}>
+                        <div className={styles.staffItemIcon} style={{ color: 'var(--danger)', backgroundColor: '#FEF2F2' }}>
+                          <AlertTriangle size={16} />
+                        </div>
+                        <div className={styles.staffItemDetails}>
+                          <div className={styles.staffItemName}>{r.name.toUpperCase()}</div>
+                          <div className={styles.staffItemRole}>
+                            <span className={styles.roleBadge} style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}>
+                              {r.role}
+                            </span>
+                            {r.department && (
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 8 }}>
+                                Dept: {r.department}
+                              </span>
+                            )}
+                            <span className={styles.divider}>•</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              Requested: {new Date(r.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={styles.staffItemEmail} style={{ fontStyle: 'italic' }}>{r.email}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            className="login-btn staff-submit"
+                            style={{ padding: '6px 12px', background: '#10B981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.8rem', width: 'auto', marginTop: 0, cursor: 'pointer' }}
+                            onClick={() => handleApproveRejectRequest(r.request_id, r.name, 'approve')}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="login-btn staff-submit"
+                            style={{ padding: '6px 12px', background: '#EF4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.8rem', width: 'auto', marginTop: 0, cursor: 'pointer' }}
+                            onClick={() => handleApproveRejectRequest(r.request_id, r.name, 'reject')}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -901,7 +1405,7 @@ const DashboardPage = () => {
       <Modal 
         isOpen={isDispenseModalOpen} 
         onClose={() => setIsDispenseModalOpen(false)}
-        title={`Dispensing Checkout - Patient: ${selectedPatientName.toUpperCase()}`}
+        title={`Dispensing Checkout - Patient: ${(selectedPatientName || '').toUpperCase()}`}
       >
         <form onSubmit={handleDispenseSubmit}>
           {dispenseError && <div className="alert alert-danger" style={{ marginBottom: 16 }}>{dispenseError}</div>}
@@ -983,90 +1487,163 @@ const DashboardPage = () => {
         </form>
       </Modal>
 
-      {/* ─── PRINTABLE BILL INVOICE MODAL ─── */}
-      <Modal 
-        isOpen={isBillModalOpen}
-        onClose={closeBillAndReload}
-        title="Fulfillment Invoice Generated"
+      <BillPopup 
+        isOpen={isBillModalOpen} 
+        onClose={closeBillAndReload} 
+        billData={generatedBill} 
+      />
+
+      {/* ─── NURSE TRIAGE MODAL ─── */}
+      <Modal
+        isOpen={isTriageModalOpen}
+        onClose={() => setIsTriageModalOpen(false)}
+        title={`Log Vitals - Patient: ${(triagePatientName || '').toUpperCase()}`}
       >
-        {generatedBill && (
-          <div>
-            {/* Invoice frame containing printable content */}
-            <div className="printable-invoice" style={{
-              border: '1px solid #ddd',
-              borderRadius: 6,
-              padding: 24,
-              backgroundColor: '#fff',
-              color: '#333',
-              fontFamily: 'monospace, sans-serif',
-              marginBottom: 16
-            }}>
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <h2 style={{ margin: 0, fontWeight: 800 }}>SUMA CLINIC &amp; MEDICAL CENTER</h2>
-                <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>123 Health Ave, Medical District, City</p>
-                <p style={{ margin: '4px 0', fontSize: '0.85rem' }}>Phone: +1 (555) 019-2834</p>
-              </div>
-
-              <hr style={{ border: 'none', borderTop: '1px dashed #333', margin: '12px 0' }} />
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 12 }}>
-                <div>
-                  <strong>BILL NO:</strong> {generatedBill.bill_number}<br />
-                  <strong>PATIENT:</strong> {generatedBill.patient_name.toUpperCase()}<br />
-                  <strong>PATIENT ID:</strong> #{generatedBill.patient_id}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <strong>DATE:</strong> {new Date(generatedBill.created_at).toLocaleDateString()}<br />
-                  <strong>TIME:</strong> {new Date(generatedBill.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-
-              <table style={{ width: '100%', fontSize: '0.85rem', textAlign: 'left', borderCollapse: 'collapse', marginBottom: 16 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #333' }}>
-                    <th style={{ padding: '6px 0' }}>MEDICINE NAME</th>
-                    <th style={{ padding: '6px 0', textAlign: 'center' }}>QTY</th>
-                    <th style={{ padding: '6px 0', textAlign: 'right' }}>PRICE</th>
-                    <th style={{ padding: '6px 0', textAlign: 'right' }}>TOTAL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {generatedBill.items.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px dashed #eee' }}>
-                      <td style={{ padding: '6px 0', fontWeight: 600 }}>{item.medicine_name.toUpperCase()}</td>
-                      <td style={{ padding: '6px 0', textAlign: 'center' }}>{item.quantity}</td>
-                      <td style={{ padding: '6px 0', textAlign: 'right' }}>${parseFloat(item.price_per_unit).toFixed(2)}</td>
-                      <td style={{ padding: '6px 0', textAlign: 'right' }}>${parseFloat(item.total).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ fontWeight: 'bold', fontSize: '1rem', borderTop: '1px solid #333' }}>
-                    <td colSpan="3" style={{ padding: '10px 0' }}>GRAND TOTAL</td>
-                    <td style={{ padding: '10px 0', textAlign: 'right' }}>${parseFloat(generatedBill.total_amount).toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: 24 }}>
-                <span style={{ fontSize: '0.75rem', color: '#666', marginBottom: 4 }}>Pharmacist Digital Signature:</span>
-                {generatedBill.signature_ref ? (
-                  <img 
-                    src={generatedBill.signature_ref} 
-                    alt="Pharmacist Signature" 
-                    style={{ width: 140, height: 45, borderBottom: '1px solid #333' }}
-                  />
-                ) : (
-                  <div style={{ width: 140, height: 45, borderBottom: '1px dashed #333', textAlign: 'center', fontSize: '0.7rem', padding: 12 }}>Unsigned</div>
-                )}
-                <span style={{ fontSize: '0.78rem', marginTop: 4 }}>Authorized Stamp</span>
-              </div>
+        <form onSubmit={handleTriageSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div className="form-group">
+              <label>Blood Pressure (SYS/DIA)</label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={triageForm.blood_pressure}
+                onChange={e => setTriageForm(prev => ({ ...prev, blood_pressure: e.target.value }))}
+                placeholder="120/80"
+                required
+              />
             </div>
+            <div className="form-group">
+              <label>Temperature (°F)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                className="form-control" 
+                value={triageForm.temperature}
+                onChange={e => setTriageForm(prev => ({ ...prev, temperature: e.target.value }))}
+                placeholder="98.6"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Blood Sugar (mg/dL)</label>
+              <input 
+                type="number" 
+                className="form-control" 
+                value={triageForm.blood_sugar}
+                onChange={e => setTriageForm(prev => ({ ...prev, blood_sugar: e.target.value }))}
+                placeholder="e.g. 100"
+              />
+            </div>
+            <div className="form-group">
+              <label>Pulse Rate (bpm)</label>
+              <input 
+                type="number" 
+                className="form-control" 
+                value={triageForm.pulse_rate}
+                onChange={e => setTriageForm(prev => ({ ...prev, pulse_rate: e.target.value }))}
+                placeholder="e.g. 72"
+              />
+            </div>
+            <div className="form-group">
+              <label>Oxygen Saturation (SPO2 %)</label>
+              <input 
+                type="number" 
+                className="form-control" 
+                value={triageForm.oxygen_level}
+                onChange={e => setTriageForm(prev => ({ ...prev, oxygen_level: e.target.value }))}
+                placeholder="e.g. 98"
+              />
+            </div>
+            <div className="form-group">
+              <label>Height (cm)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                className="form-control" 
+                value={triageForm.height}
+                onChange={e => setTriageForm(prev => ({ ...prev, height: e.target.value }))}
+                placeholder="e.g. 170"
+              />
+            </div>
+            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+              <label>Weight (kg)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                className="form-control" 
+                value={triageForm.weight}
+                onChange={e => setTriageForm(prev => ({ ...prev, weight: e.target.value }))}
+                placeholder="e.g. 60"
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsTriageModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save Vitals &amp; Send to Doctor
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={triggerPrintBill}>
-                <Printer size={16} /> Print / Save as PDF
+      {/* ─── CASHIER BILLING MODAL ─── */}
+      <Modal
+        isOpen={isBillingModalOpen}
+        onClose={() => setIsBillingModalOpen(false)}
+        title="Central Billing Counter - Invoice Details"
+      >
+        {selectedBillingVisit && (
+          <div>
+            <div style={{ marginBottom: '16px', fontSize: '0.9rem', color: '#1e293b' }}>
+              <p><strong>Patient Name:</strong> {selectedBillingVisit.patient_name.toUpperCase()}</p>
+              <p><strong>Doctor In-Charge:</strong> {selectedBillingVisit.doctor_name}</p>
+            </div>
+            
+            <table style={{ width: '100%', borderCollapse: 'collapse', color: '#334155', fontSize: '0.85rem', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#0f172a' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 0' }}>Medicine</th>
+                  <th style={{ textAlign: 'center', padding: '8px 0' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '8px 0' }}>Price</th>
+                  <th style={{ textAlign: 'right', padding: '8px 0' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {billingDetails && billingDetails.map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px dashed #cbd5e1' }}>
+                    <td style={{ padding: '8px 0' }}>{item.medicine_name}</td>
+                    <td style={{ padding: '8px 0', textAlign: 'center' }}>{item.quantity || item.calculated_quantity}</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right' }}>₹{parseFloat(item.price).toFixed(2)}</td>
+                    <td style={{ padding: '8px 0', textAlign: 'right' }}>₹{parseFloat((item.quantity || item.calculated_quantity) * item.price).toFixed(2)}</td>
+                  </tr>
+                ))}
+                <tr style={{ borderBottom: '1px dashed #cbd5e1' }}>
+                  <td style={{ padding: '8px 0', fontWeight: '500' }}>Doctor Consultation Fee ({selectedBillingVisit.doctor_name})</td>
+                  <td style={{ padding: '8px 0', textAlign: 'center' }}>1</td>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>₹{parseFloat(selectedBillingVisit.consultation_fee || 250).toFixed(2)}</td>
+                  <td style={{ padding: '8px 0', textAlign: 'right' }}>₹{parseFloat(selectedBillingVisit.consultation_fee || 250).toFixed(2)}</td>
+                </tr>
+                <tr style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#0f172a' }}>
+                  <td colSpan="3" style={{ padding: '12px 0', borderTop: '1px solid #cbd5e1' }}>Grand Total</td>
+                  <td style={{ padding: '12px 0', textAlign: 'right', borderTop: '1px solid #cbd5e1', color: '#16a34a' }}>
+                    ₹{parseFloat(selectedBillingVisit.estimated_bill_amount || 0).toFixed(2)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="btn btn-secondary" onClick={() => setIsBillingModalOpen(false)}>
+                Cancel
               </button>
-              <button className="btn btn-primary" onClick={closeBillAndReload}>
-                Close &amp; Back to Dashboard
+              <button 
+                className="btn btn-primary"
+                onClick={() => handleCollectPayment('Cash')}
+                disabled={collectPaymentLoading}
+              >
+                {collectPaymentLoading ? 'Processing...' : 'Print'}
               </button>
             </div>
           </div>

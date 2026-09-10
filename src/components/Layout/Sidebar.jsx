@@ -20,15 +20,17 @@ const Sidebar = () => {
   const isAdmin = user && user.role === 'Admin';
   const isDoctor = user && user.role === 'Doctor';
   const isPharmacist = user && user.role === 'Pharmacist';
+  const isReceptionist = user && user.role === 'Receptionist';
+  const isNurse = user && user.role === 'Nurse';
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, show: true },
-    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isAdmin || isDoctor || isPharmacist },
-    { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isDoctor },
+    { path: '/patients', label: 'Patients', icon: <Users size={18} />, show: isAdmin || isDoctor || isPharmacist || isReceptionist || isNurse },
+    { path: '/visits/new', label: 'New Visit', icon: <PlusCircle size={18} />, show: isReceptionist },
     { path: '/inventory', label: 'Inventory', icon: <Pill size={18} />, show: isAdmin || isDoctor || isPharmacist },
-    { path: '/sales', label: 'Billing & Sales', icon: <DollarSign size={18} />, show: isAdmin || isPharmacist },
+    {path: '/sales', label: 'Billing & Sales', icon: <DollarSign size={18} />, show: isAdmin || isPharmacist },
     { path: '/sales/walkin', label: 'Direct Dispensing', icon: <ShoppingCart size={18} />, show: isPharmacist },
-    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: isAdmin || isDoctor || isPharmacist },
+    { path: '/reports', label: 'Reports', icon: <BarChart2 size={18} />, show: false },
   ].filter(item => item.show);
 
   return (

@@ -89,3 +89,124 @@
 .eyeBtn:hover {
   color: var(--primary);
 }
+
+.forgotBtn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 10px;
+  display: block;
+  text-align: right;
+  width: 100%;
+}
+.forgotBtn:hover {
+  text-decoration: underline;
+}
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  width: 100%;
+  max-width: 400px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-dark);
+}
+.modalCloseBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.modalCloseBtn:hover {
+  color: var(--danger);
+}
+.modalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.modalBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+}
+.modalBtnPrimary {
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+}
+.modalBtnSecondary {
+  background-color: var(--border);
+  color: var(--text-dark);
+  border: none;
+}
+.optionGroup {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.optionCard {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.optionCard:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-bg);
+}
+.optionCardActive {
+  border-color: var(--primary);
+  background-color: var(--primary-bg);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.infoBox {
+  font-size: 0.85rem;
+  background-color: #E0F2FE;
+  border: 1px solid #BAE6FD;
+  border-radius: var(--radius);
+  color: #0369A1;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.successBox {
+  font-size: 0.85rem;
+  background-color: #DCFCE7;
+  border: 1px solid #BBF7D0;
+  border-radius: var(--radius);
+  color: #15803D;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
